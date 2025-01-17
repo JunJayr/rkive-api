@@ -5,7 +5,7 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 
-
+#User Creation
 class UserAccountManager(BaseUserManager):
     def create_user(self, email, password=None, **kwargs):
         if not email:
@@ -37,7 +37,7 @@ class UserAccountManager(BaseUserManager):
 
         return user
 
-
+#User Viewing
 class UserAccount(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
