@@ -126,22 +126,16 @@ class ApplicationDocxView(APIView):
             # Use DocxTemplate instead of Document
             doc = DocxTemplate(template_path)
             doc.render(context)  # Auto-replaces placeholders
-
+        
             filename = f"Application-for-Oral-Defense_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"  
             file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", filename)
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             doc.save(file_path)
 
-            with open(file_path, "rb") as file:
-                response = HttpResponse(
-                    file.read(),
-                    content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-                response["Content-Disposition"] = f'attachment; filename="{filename}"'
-                return response
-
+            file_url = f"{settings.MEDIA_URL}generated_documents/{filename}"
+            return JsonResponse({"file_url": file_url}, status=200)
         except Exception as e:
-            return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+            return JsonResponse({"error": str(e)}, status=500)
 
 class PanelDocxView(APIView):
     def post(self, request, *args, **kwargs):
@@ -163,14 +157,9 @@ class PanelDocxView(APIView):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             doc.save(file_path)
 
-            with open(file_path, "rb") as file:
-                response = HttpResponse(
-                    file.read(),
-                    content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-                response["Content-Disposition"] = f'attachment; filename="{filename}"'
-                return response
-
+            file_url = f"{settings.MEDIA_URL}generated_documents/{filename}"
+            return JsonResponse({"file_url": file_url}, status=200)
         except Exception as e:
-            return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+            return JsonResponse({"error": str(e)}, status=500)
+
 
