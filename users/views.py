@@ -1,7 +1,10 @@
 import os
+
+from docxtpl import DocxTemplate
+from docx2pdf import convert
+
 from datetime import datetime
 from django.http import HttpResponse, JsonResponse
-from docxtpl import DocxTemplate
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,6 +16,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView
 )
 
+#AUTHENTICATION
 class CustomProviderAuthView(ProviderAuthView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
@@ -112,6 +116,8 @@ class LogoutView(APIView):
 
         return response
 
+
+#GENERATE PDF
 class ApplicationDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
@@ -123,17 +129,22 @@ class ApplicationDocxView(APIView):
             return JsonResponse({"error": "Template file not found."}, status=404)
         
         try:
-            # Use DocxTemplate instead of Document
             doc = DocxTemplate(template_path)
-            doc.render(context)  # Auto-replaces placeholders
-        
-            filename = f"Application-for-Oral-Defense_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"  
-            file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", filename)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            doc.save(file_path)
+            doc.render(context)
+            docx_filename = f"Application-for-Oral-Defense_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+            docx_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", docx_filename)
+            os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
+            doc.save(docx_file_path)
 
-            file_url = f"{settings.MEDIA_URL}generated_documents/{filename}"
-            return JsonResponse({"file_url": file_url}, status=200)
+            pdf_filename = docx_filename.replace('.docx', '.pdf')
+            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
+            convert(docx_file_path, pdf_file_path)
+            
+            os.remove(docx_file_path)
+
+            pdf_file_url = f"{settings.MEDIA_URL}generated_documents/{pdf_filename}"
+            return JsonResponse({"file_url": pdf_file_url}, status=200)
+        
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -148,18 +159,21 @@ class PanelDocxView(APIView):
             return JsonResponse({"error": "Template file not found."}, status=404)
         
         try:
-            # Use DocxTemplate instead of Document
             doc = DocxTemplate(template_path)
-            doc.render(context)  # Auto-replaces placeholders
-
-            filename = f"IT-Nomination-of-Members-of-Oral-Examination-Panel_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"  
+            doc.render(context)
+            filename = f"IT-Nomination-of-Members-of-Oral-Examination-Panel_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
             file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", filename)
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             doc.save(file_path)
 
-            file_url = f"{settings.MEDIA_URL}generated_documents/{filename}"
-            return JsonResponse({"file_url": file_url}, status=200)
+            pdf_filename = filename.replace('.docx', '.pdf')
+            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
+            convert(file_path, pdf_file_path)
+
+            os.remove(file_path)
+
+            pdf_file_url = f"{settings.MEDIA_URL}generated_documents/{pdf_filename}"
+            return JsonResponse({"file_url": pdf_file_url}, status=200)
+        
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
-
-
