@@ -4,7 +4,7 @@ from docxtpl import DocxTemplate
 from docx2pdf import convert
 
 from datetime import datetime
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -159,21 +159,31 @@ class PanelDocxView(APIView):
             return JsonResponse({"error": "Template file not found."}, status=404)
         
         try:
+            # 1. Render the document
             doc = DocxTemplate(template_path)
             doc.render(context)
-            filename = f"IT-Nomination-of-Members-of-Oral-Examination-Panel_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-            file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", filename)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            doc.save(file_path)
 
-            pdf_filename = filename.replace('.docx', '.pdf')
+            # 2. Generate a unique filename for the .docx
+            docx_filename = f"IT-Nomination-of-Members-of-Oral-Examination-Panel_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+            docx_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", docx_filename)
+            os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
+            doc.save(docx_file_path)
+
+            # 3. Convert .docx to .pdf
+            pdf_filename = docx_filename.replace('.docx', '.pdf')
             pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
-            convert(file_path, pdf_file_path)
+            convert(docx_file_path, pdf_file_path)
 
-            os.remove(file_path)
+            # 4. Remove the .docx file (if you don't need it anymore)
+            os.remove(docx_file_path)
 
-            pdf_file_url = f"{settings.MEDIA_URL}generated_documents/{pdf_filename}"
-            return JsonResponse({"file_url": pdf_file_url}, status=200)
+            # 5. Serve the PDF as an inline file so the user can preview/download
+            pdf_file = open(pdf_file_path, 'rb')
+            response = FileResponse(pdf_file, content_type='application/pdf')
+
+            # Inline content-disposition allows preview in the browser and user download from there
+            response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+            return response
         
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
