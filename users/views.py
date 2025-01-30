@@ -116,8 +116,6 @@ class LogoutView(APIView):
 
         return response
 
-
-#GENERATE PDF
 class ApplicationDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
@@ -129,24 +127,39 @@ class ApplicationDocxView(APIView):
             return JsonResponse({"error": "Template file not found."}, status=404)
         
         try:
+            # 1. Load and render the document
             doc = DocxTemplate(template_path)
             doc.render(context)
+
+            # 2. Generate a unique filename for the .docx
             docx_filename = f"Application-for-Oral-Defense_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-            docx_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", docx_filename)
+            docx_file_path = os.path.join(
+                settings.MEDIA_ROOT, "generated_documents", docx_filename
+            )
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
             doc.save(docx_file_path)
 
+            # 3. Convert the .docx to .pdf
             pdf_filename = docx_filename.replace('.docx', '.pdf')
-            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
+            pdf_file_path = os.path.join(
+                settings.MEDIA_ROOT, "generated_documents", pdf_filename
+            )
             convert(docx_file_path, pdf_file_path)
-            
+
+            # 4. Remove the .docx file (if not needed anymore)
             os.remove(docx_file_path)
 
-            pdf_file_url = f"{settings.MEDIA_URL}generated_documents/{pdf_filename}"
-            return JsonResponse({"file_url": pdf_file_url}, status=200)
-        
+            # 5. Serve the PDF as an inline file so the user can preview/download
+            pdf_file = open(pdf_file_path, 'rb')
+            response = FileResponse(pdf_file, content_type='application/pdf')
+
+            # Inline content-disposition allows preview in the browser and user download from there
+            response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+            return response
+
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
 
 class PanelDocxView(APIView):
     def post(self, request, *args, **kwargs):
