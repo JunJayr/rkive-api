@@ -3,13 +3,16 @@ import os
 from docxtpl import DocxTemplate
 from docx2pdf import convert
 
+from .models import Manuscript
 from datetime import datetime
+from django.http import JsonResponse
 from django.http import HttpResponse, JsonResponse, FileResponse
 from django.conf import settings
+from djoser.social.views import ProviderAuthView
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from djoser.social.views import ProviderAuthView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -116,6 +119,7 @@ class LogoutView(APIView):
 
         return response
 
+#Format Submission
 class ApplicationDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
@@ -200,3 +204,30 @@ class PanelDocxView(APIView):
         
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
+#Manuscript Submission
+class ManuscriptSubmissionView(APIView):
+    parser_classes = (MultiPartParser, FormParser)  # Allows file uploads
+
+    def post(self, request, *args, **kwargs):
+        title = request.data.get("title")
+        pdf = request.FILES.get("pdf")
+
+        if not title or not pdf:
+            return JsonResponse({"error": "Title and PDF file are required"}, status=400)
+
+        # Save manuscript manually
+        manuscript = Manuscript.objects.create(title=title, pdf=pdf)
+        
+        return JsonResponse({
+            "message": "Manuscript submitted successfully",
+            "id": manuscript.id,
+            "title": manuscript.title,
+            "pdf_url": manuscript.pdf.url,
+            "created_at": manuscript.created_at
+        }, status=201)
+
+    def get(self, request, *args, **kwargs):
+        """Retrieve all manuscripts"""
+        manuscripts = Manuscript.objects.all().values("id", "title", "pdf", "created_at")
+        return JsonResponse(list(manuscripts), safe=False, status=200)

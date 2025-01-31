@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import (
     BaseUserManager,
     AbstractBaseUser,
@@ -54,3 +55,28 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+#Submission and Viewing of Manuscript
+class Manuscript(models.Model):
+    """
+    Model to store research, thesis, or capstone manuscripts.
+    """
+    title = models.CharField(max_length=200, help_text="Title of the manuscript")
+    pdf = models.FileField(upload_to='manuscripts/', help_text="Upload the PDF file here")
+    created_at = models.DateTimeField(default=timezone.now, help_text="Timestamp of submission")
+
+    class Meta:
+        verbose_name = "Manuscript"
+        verbose_name_plural = "Manuscripts"
+        ordering = ['-created_at']  # Show most recent first
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def filename(self):
+        """
+        Returns the name of the uploaded PDF file.
+        Example: If file is `manuscripts/my_thesis.pdf`, returns `my_thesis.pdf`
+        """
+        return self.pdf.name.split('/')[-1]
