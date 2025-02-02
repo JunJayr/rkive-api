@@ -211,23 +211,25 @@ class ManuscriptSubmissionView(APIView):
 
     def post(self, request, *args, **kwargs):
         title = request.data.get("title")
+        description = request.data.get("description", "")  # Optional description
         pdf = request.FILES.get("pdf")
 
         if not title or not pdf:
             return JsonResponse({"error": "Title and PDF file are required"}, status=400)
 
         # Save manuscript manually
-        manuscript = Manuscript.objects.create(title=title, pdf=pdf)
-        
+        manuscript = Manuscript.objects.create(title=title, description=description, pdf=pdf)
+
         return JsonResponse({
             "message": "Manuscript submitted successfully",
             "id": manuscript.id,
             "title": manuscript.title,
+            "description": manuscript.description,  # Include description in the response
             "pdf_url": manuscript.pdf.url,
             "created_at": manuscript.created_at
         }, status=201)
 
     def get(self, request, *args, **kwargs):
         """Retrieve all manuscripts"""
-        manuscripts = Manuscript.objects.all().values("id", "title", "pdf", "created_at")
+        manuscripts = Manuscript.objects.all().values("id", "title", "description", "pdf", "created_at")
         return JsonResponse(list(manuscripts), safe=False, status=200)

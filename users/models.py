@@ -62,6 +62,7 @@ class Manuscript(models.Model):
     Model to store research, thesis, or capstone manuscripts.
     """
     title = models.CharField(max_length=200, help_text="Title of the manuscript")
+    description = models.TextField(blank=True, help_text="Brief description or abstract of the manuscript")  # Added field
     pdf = models.FileField(upload_to='manuscripts/', help_text="Upload the PDF file here")
     created_at = models.DateTimeField(default=timezone.now, help_text="Timestamp of submission")
 

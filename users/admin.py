@@ -8,7 +8,7 @@ class UserAccount(admin.ModelAdmin):
 
 @admin.register(Manuscript)
 class ManuscriptAdmin(admin.ModelAdmin):
-    list_display = ('title', 'pdf', 'created_at')
-    search_fields = ('title',)
+    list_display = ('title', 'description', 'pdf', 'created_at')
+    search_fields = ('title', 'description')
 
 
