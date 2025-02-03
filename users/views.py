@@ -3,10 +3,11 @@ import os
 from docxtpl import DocxTemplate
 from docx2pdf import convert
 
+from django.db.models import Q
 from .models import Manuscript
 from datetime import datetime
 from django.http import JsonResponse
-from django.http import HttpResponse, JsonResponse, FileResponse
+from django.http import HttpResponse, JsonResponse, FileResponse, Http404
 from django.conf import settings
 from djoser.social.views import ProviderAuthView
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -211,25 +212,45 @@ class ManuscriptSubmissionView(APIView):
 
     def post(self, request, *args, **kwargs):
         title = request.data.get("title")
-        description = request.data.get("description", "")  # Optional description
+        description = request.data.get("description", "").strip()  # Optional description
         pdf = request.FILES.get("pdf")
 
         if not title or not pdf:
-            return JsonResponse({"error": "Title and PDF file are required"}, status=400)
+            return JsonResponse({"error": "Title and PDF file are required."}, status=400)
 
-        # Save manuscript manually
+        # Save manuscript
         manuscript = Manuscript.objects.create(title=title, description=description, pdf=pdf)
 
         return JsonResponse({
             "message": "Manuscript submitted successfully",
             "id": manuscript.id,
             "title": manuscript.title,
-            "description": manuscript.description,  # Include description in the response
-            "pdf_url": manuscript.pdf.url,
-            "created_at": manuscript.created_at
+            "description": manuscript.description,
+            "pdf_url": request.build_absolute_uri(manuscript.pdf.url),
+            "created_at": manuscript.created_at.strftime("%Y-%m-%d %H:%M:%S"),  # Convert to JSON-friendly format
         }, status=201)
 
     def get(self, request, *args, **kwargs):
-        """Retrieve all manuscripts"""
-        manuscripts = Manuscript.objects.all().values("id", "title", "description", "pdf", "created_at")
-        return JsonResponse(list(manuscripts), safe=False, status=200)
+        search_query = request.GET.get('q', '').strip()
+
+        # Filter manuscripts by title or description if search_query is provided
+        manuscripts = Manuscript.objects.filter(
+            Q(title__icontains=search_query) | Q(description__icontains=search_query)
+        ) if search_query else Manuscript.objects.all()
+
+        # Construct the response data
+        data = [
+            {
+                "id": manuscript.id,
+                "title": manuscript.title,
+                "description": manuscript.description,
+                "pdf_url": request.build_absolute_uri(manuscript.pdf.url),
+                "created_at": manuscript.created_at.strftime("%Y-%m-%d %H:%M:%S"),  # JSON-friendly date
+            }
+            for manuscript in manuscripts
+        ]
+
+        return JsonResponse(data, safe=False, status=200)
+
+
+        
