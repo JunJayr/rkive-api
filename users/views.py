@@ -252,5 +252,15 @@ class ManuscriptSubmissionView(APIView):
 
         return JsonResponse(data, safe=False, status=200)
 
+class ManuscriptPdfView(APIView):
+    def get(self, request, manuscript_id, *args, **kwargs):
+        try:
+            manuscript = Manuscript.objects.get(id=manuscript_id)
+            pdf_path = manuscript.pdf.path  # Full path to the file
+            response = FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+            response['Content-Disposition'] = 'inline; filename="manuscript.pdf"'  # Ensure it opens in browser/Adobe
+            return response
+        except Manuscript.DoesNotExist:
+            raise Http404("Manuscript not found.")
 
         
