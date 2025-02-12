@@ -1,8 +1,10 @@
 import os
+import pythoncom
 
 from docxtpl import DocxTemplate
 from docx2pdf import convert
 
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from .models import Manuscript
 from datetime import datetime
@@ -58,6 +60,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
 
+            # Retrieve user from the request data
+            user = self.get_user(request.data.get("email"))
+
+            # Include role-based flags in the response
+            response.data.update({
+                'is_active': user.is_active,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser,
+            })
+
+            # Set cookies
             response.set_cookie(
                 'access',
                 access_token,
@@ -78,6 +91,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             )
 
         return response
+
+    def get_user(self, email):
+    
+        User = get_user_model()
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
+
 
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
@@ -132,6 +154,9 @@ class ApplicationDocxView(APIView):
             return JsonResponse({"error": "Template file not found."}, status=404)
         
         try:
+            # Initialize COM before calling `convert`
+            pythoncom.CoInitialize()
+
             # 1. Load and render the document
             doc = DocxTemplate(template_path)
             doc.render(context)
@@ -144,7 +169,7 @@ class ApplicationDocxView(APIView):
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
             doc.save(docx_file_path)
 
-            # 3. Convert the .docx to .pdf
+            # 3. Convert the .docx to .pdf (Ensure COM is initialized)
             pdf_filename = docx_filename.replace('.docx', '.pdf')
             pdf_file_path = os.path.join(
                 settings.MEDIA_ROOT, "generated_documents", pdf_filename
@@ -165,6 +190,9 @@ class ApplicationDocxView(APIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
+        finally:
+            # Uninitialize COM to free up resources
+            pythoncom.CoUninitialize()
 
 class PanelDocxView(APIView):
     def post(self, request, *args, **kwargs):
@@ -177,6 +205,9 @@ class PanelDocxView(APIView):
             return JsonResponse({"error": "Template file not found."}, status=404)
         
         try:
+            # Initialize COM before using `convert`
+            pythoncom.CoInitialize()
+
             # 1. Render the document
             doc = DocxTemplate(template_path)
             doc.render(context)
@@ -187,12 +218,12 @@ class PanelDocxView(APIView):
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
             doc.save(docx_file_path)
 
-            # 3. Convert .docx to .pdf
+            # 3. Convert .docx to .pdf (Ensure COM is initialized)
             pdf_filename = docx_filename.replace('.docx', '.pdf')
             pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
             convert(docx_file_path, pdf_file_path)
 
-            # 4. Remove the .docx file (if you don't need it anymore)
+            # 4. Remove the .docx file (optional)
             os.remove(docx_file_path)
 
             # 5. Serve the PDF as an inline file so the user can preview/download
@@ -205,6 +236,9 @@ class PanelDocxView(APIView):
         
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
+        finally:
+            pythoncom.CoUninitialize()  # Ensure COM is cleaned up
 
 #Manuscript Submission
 class ManuscriptSubmissionView(APIView):
