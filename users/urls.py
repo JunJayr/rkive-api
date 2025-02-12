@@ -7,7 +7,10 @@ from .views import(
     LogoutView,
     ApplicationDocxView,
     PanelDocxView,
-    ManuscriptSubmissionView
+    ManuscriptSubmissionView,
+    DocumentCountView,
+    ListDocumentFilesView,
+    ListUsersView,
 )
 
 urlpatterns = [
@@ -20,8 +23,14 @@ urlpatterns = [
     path('jwt/refresh/', CustomTokenRefreshView.as_view()),
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
+    
     path('application-docx/', ApplicationDocxView.as_view()),
     path('panel-docx/', PanelDocxView.as_view()),
     path('manuscripts/', ManuscriptSubmissionView.as_view()),
+
+    path('document-count/', DocumentCountView.as_view()),
+    path('list-files/', ListDocumentFilesView.as_view()),
+    path('list-users/', ListUsersView.as_view()),
+    path('list-users/<int:user_id>/', ListUsersView.as_view()),
 ]
 

@@ -185,6 +185,7 @@ class ApplicationDocxView(APIView):
 
             # Inline content-disposition allows preview in the browser and user download from there
             response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+
             return response
 
         except Exception as e:
@@ -232,6 +233,7 @@ class PanelDocxView(APIView):
 
             # Inline content-disposition allows preview in the browser and user download from there
             response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+
             return response
         
         except Exception as e:
@@ -293,8 +295,127 @@ class ManuscriptPdfView(APIView):
             pdf_path = manuscript.pdf.path  # Full path to the file
             response = FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
             response['Content-Disposition'] = 'inline; filename="manuscript.pdf"'  # Ensure it opens in browser/Adobe
+
             return response
         except Manuscript.DoesNotExist:
             raise Http404("Manuscript not found.")
 
-        
+class DocumentCountView(APIView):
+    def get(self, request, *args, **kwargs):
+        generated_docs_path = os.path.join(settings.MEDIA_ROOT, "generated_documents")
+        manuscripts_path = os.path.join(settings.MEDIA_ROOT, "manuscripts")
+
+        # Count files in the "generated_documents" directory
+        generated_docs_count = len(
+            [f for f in os.listdir(generated_docs_path) if os.path.isfile(os.path.join(generated_docs_path, f))]
+        )
+
+        # Count files in the "manuscripts" directory
+        manuscripts_count = len(
+            [f for f in os.listdir(manuscripts_path) if os.path.isfile(os.path.join(manuscripts_path, f))]
+        )
+
+        return JsonResponse({
+            "generated_documents_count": generated_docs_count,
+            "manuscripts_count": manuscripts_count
+        }, status=200)
+
+class ListDocumentFilesView(APIView):
+    def get(self, request, *args, **kwargs):
+        base_generated_documents_path = os.path.join(settings.MEDIA_ROOT, 'generated_documents')
+        base_manuscripts_path = os.path.join(settings.MEDIA_ROOT, 'manuscripts')
+
+        # Function to list files in a directory
+        def list_files_in_directory(directory_path):
+            if os.path.exists(directory_path):
+                return [file for file in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, file))]
+            return []
+
+        # List files in both directories
+        generated_documents_files = list_files_in_directory(base_generated_documents_path)
+        manuscripts_files = list_files_in_directory(base_manuscripts_path)
+
+        return JsonResponse({
+            "generated_documents_files": generated_documents_files,
+            "manuscripts_files": manuscripts_files
+        })
+
+class ListUsersView(APIView):
+    def get(self, request, *args, **kwargs):
+        User = get_user_model()
+        users = User.objects.all().values('id', 'first_name', 'last_name', 'email', 'is_active', 'is_staff', 'is_superuser')
+        return Response(list(users))
+
+    def post(self, request, *args, **kwargs):
+        User = get_user_model()
+        data = request.data
+
+        # Check if email already exists
+        if User.objects.filter(email=data.get('email')).exists():
+            return JsonResponse({"error": "Email already exists."}, status=400)
+
+        # Check if password and repassword are provided and match
+        password = data.get('password')
+        repassword = data.get('repassword')
+
+        if not password or not repassword:
+            return JsonResponse({"error": "Both password and repassword are required."}, status=400)
+        if password != repassword:
+            return JsonResponse({"error": "Passwords do not match."}, status=400)
+
+        # Create a new user
+        user = User.objects.create(
+            first_name=data.get('first_name', ''),
+            last_name=data.get('last_name', ''),
+            email=data.get('email'),
+            is_active=True  # Defaulting to active if not set
+        )
+        user.set_password(password)  # Set the password securely
+        user.save()
+
+        return JsonResponse({
+            "message": "User created successfully",
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email
+        }, status=201)
+
+
+    def put(self, request, *args, **kwargs):
+        user_id = kwargs.get('user_id')
+        try:
+            User = get_user_model()
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User not found."}, status=404)
+
+        user.first_name = request.data.get("first_name", user.first_name)
+        user.last_name = request.data.get("last_name", user.last_name)
+        user.email = request.data.get("email", user.email)
+        user.is_active = request.data.get("is_active", user.is_active)
+        user.is_staff = request.data.get("is_staff", user.is_staff)
+        user.is_superuser = request.data.get("is_superuser", user.is_superuser)
+        user.save()
+
+        return JsonResponse({
+            "message": "User updated successfully",
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "is_active": user.is_active,
+            "is_staff": user.is_staff,
+            "is_superuser": user.is_superuser
+        }, status=200)
+
+    def delete(self, request, *args, **kwargs):
+        user_id = kwargs.get('user_id')
+        try:
+            User = get_user_model()
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User not found."}, status=404)
+
+        user.delete()
+        return JsonResponse({"message": "User deleted successfully."}, status=204)
