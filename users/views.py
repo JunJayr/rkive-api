@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.http import HttpResponse, JsonResponse, FileResponse, Http404
 from django.conf import settings
 from djoser.social.views import ProviderAuthView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -60,17 +61,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
 
-            # Retrieve user from the request data
-            user = self.get_user(request.data.get("email"))
-
-            # Include role-based flags in the response
-            response.data.update({
-                'is_active': user.is_active,
-                'is_staff': user.is_staff,
-                'is_superuser': user.is_superuser,
-            })
-
-            # Set cookies
             response.set_cookie(
                 'access',
                 access_token,
@@ -92,14 +82,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         return response
 
-    def get_user(self, email):
-    
-        User = get_user_model()
-        try:
-            return User.objects.get(email=email)
-        except User.DoesNotExist:
-            return None
+class UserRoleView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        user = request.user
+
+        return Response({
+            "is_active": user.is_active,
+            "is_staff": user.is_staff,
+            "is_superuser": user.is_superuser,
+        })
 
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):

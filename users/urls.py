@@ -2,6 +2,7 @@ from django.urls import path, re_path
 from .views import(
     CustomProviderAuthView,
     CustomTokenObtainPairView,
+    UserRoleView,
     CustomTokenRefreshView,
     CustomTokenVerifyView,
     LogoutView,
@@ -11,6 +12,7 @@ from .views import(
     DocumentCountView,
     ListDocumentFilesView,
     ListUsersView,
+    
 )
 
 urlpatterns = [
@@ -21,6 +23,7 @@ urlpatterns = [
     ),
     path('jwt/create/', CustomTokenObtainPairView.as_view()),
     path('jwt/refresh/', CustomTokenRefreshView.as_view()),
+    path('user-role/', UserRoleView.as_view()),
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
     
