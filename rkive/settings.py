@@ -154,7 +154,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = '587'
 EMAIL_USE_TLS = 'True'
 EMAIL_HOST_USER = 'info.rkiveofficial@gmail.com'
-EMAIL_HOST_PASSWORD = 'anlt jghb omsl euhj'
+EMAIL_HOST_PASSWORD = 'wmox kavj nwzy noql'
 
 DOMAIN = 'localhost:3000'
 SITE_NAME = 'Rkive'
