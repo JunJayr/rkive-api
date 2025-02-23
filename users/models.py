@@ -15,34 +15,38 @@ class UserAccountManager(BaseUserManager):
         email = self.normalize_email(email)
         email = email.lower()
 
-        user = self.model(
-            email=email,
-            **kwargs
-        )
-
+        user = self.model(email=email, **kwargs)
         user.set_password(password)
         user.save(using=self._db)
-
         return user
 
     def create_superuser(self, email, password=None, **kwargs):
-        user = self.create_user(
-            email,
-            password=password,
-            **kwargs
-        )
-
+        user = self.create_user(email, password=password, **kwargs)
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
-
         return user
 
-#User Viewing
+# User Model with Roles
 class UserAccount(AbstractBaseUser, PermissionsMixin):
+    SUPER_ADMIN = 'superadmin'
+    DEANS_OFFICE = 'deans_office'
+    HEAD_DEPARTMENT = 'head_department'
+    FACULTY = 'faculty'
+    STUDENT = 'student'
+
+    ROLE_CHOICES = [
+        (SUPER_ADMIN, 'Super Admin'),
+        (DEANS_OFFICE, 'Dean’s Office/Dean'),
+        (HEAD_DEPARTMENT, 'Head of Department'),
+        (FACULTY, 'Faculty/Panels'),
+        (STUDENT, 'Student'),
+    ]
+
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.EmailField(unique=True, max_length=255)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=STUDENT)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -51,7 +55,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     objects = UserAccountManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'role']
 
     def __str__(self):
         return self.email
@@ -81,3 +85,5 @@ class Manuscript(models.Model):
         Example: If file is `manuscripts/my_thesis.pdf`, returns `my_thesis.pdf`
         """
         return self.pdf.name.split('/')[-1]
+
+
