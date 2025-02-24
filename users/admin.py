@@ -3,13 +3,11 @@ from .models import UserAccount, Manuscript
 
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'email', 'role', 'is_active', 'is_staff', 'is_superuser')  
+    list_display = ('first_name', 'last_name', 'email', 'is_active', 'is_superuser', 'is_staff', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')  
     search_fields = ('first_name', 'last_name', 'email')
-    list_filter = ('role', 'is_active', 'is_staff')
+    list_filter = ('is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student', 'is_active')
 
 @admin.register(Manuscript)
 class ManuscriptAdmin(admin.ModelAdmin):
     list_display = ('title', 'description', 'pdf', 'created_at')
     search_fields = ('title', 'description')
-
-
