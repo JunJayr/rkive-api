@@ -3,9 +3,9 @@ from .models import UserAccount, Manuscript
 
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'email', 'is_active', 'is_superuser', 'is_staff', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')  
+    list_display = ('first_name', 'last_name', 'email', 'is_active',  'is_staff', 'is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')  
     search_fields = ('first_name', 'last_name', 'email')
-    list_filter = ('is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student', 'is_active')
+    list_filter = ('is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')
 
 @admin.register(Manuscript)
 class ManuscriptAdmin(admin.ModelAdmin):

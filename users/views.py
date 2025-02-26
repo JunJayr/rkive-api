@@ -92,6 +92,10 @@ class UserRoleView(APIView):
             "is_active": user.is_active,
             "is_staff": user.is_staff,
             "is_superuser": user.is_superuser,
+            "is_dean": user.is_dean,
+            "is_headdept": user.is_headdept,
+            "is_faculty": user.is_faculty,
+            "is_student": user.is_student,
         })
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -336,7 +340,7 @@ class ListDocumentFilesView(APIView):
 class ListUsersView(APIView):
     def get(self, request, *args, **kwargs):
         User = get_user_model()
-        users = User.objects.all().values('id', 'first_name', 'last_name', 'email', 'is_active', 'is_staff', 'is_superuser')
+        users = User.objects.all().values('id', 'first_name', 'last_name', 'email', 'is_active', 'is_staff', 'is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')
         return Response(list(users))
 
     def post(self, request, *args, **kwargs):
@@ -389,6 +393,10 @@ class ListUsersView(APIView):
         user.is_active = request.data.get("is_active", user.is_active)
         user.is_staff = request.data.get("is_staff", user.is_staff)
         user.is_superuser = request.data.get("is_superuser", user.is_superuser)
+        user.is_dean = request.data.get("is_dean", user.is_dean)
+        user.is_headdept = request.data.get("is_headdept", user.is_headdept)
+        user.is_faculty = request.data.get("is_faculty", user.is_faculty)
+        user.is_student = request.data.get("is_student", user.is_student)
         user.save()
 
         return JsonResponse({
@@ -399,7 +407,11 @@ class ListUsersView(APIView):
             "email": user.email,
             "is_active": user.is_active,
             "is_staff": user.is_staff,
-            "is_superuser": user.is_superuser
+            "is_superuser": user.is_superuser,
+            "is_dean": user.is_dean,
+            "is_headdept": user.is_headdept,
+            "is_faculty": user.is_faculty,
+            "is_student": user.is_student,
         }, status=200)
 
     def delete(self, request, *args, **kwargs):
