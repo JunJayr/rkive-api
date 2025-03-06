@@ -198,12 +198,15 @@ class ApplicationAdminDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
         template_path = os.path.join(
-            settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application.docx'
+            settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application_ISO.docx'  # Input template
+        )
+        output_path = os.path.join(
+            settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application.docx'  # Output file
         )
 
         # Check if the template file exists
         if not os.path.exists(template_path):
-            return JsonResponse({"error": "Template file not found."}, status=404)
+            return JsonResponse({"error": "Template file (template_application_ISO.docx) not found."}, status=404)
         
         try:
             # 1. Read the .docx file as a ZIP archive and store its contents
@@ -212,37 +215,36 @@ class ApplicationAdminDocxView(APIView):
                 for item in zip_ref.infolist():
                     zip_data[item.filename] = zip_ref.read(item.filename)
 
-            # 2. Find the header file containing {{revNo}} and {{date}}
-            new_rev_no = context.get('revNo', '{{revNo}}')
+            # 2. Find any XML file containing {{rev}} and {{date}}
+            new_rev = context.get('rev', '{{rev}}')
             new_date = context.get('date', '{{date}}')
             updated = False
 
             for filename in zip_data.keys():
-                if filename.startswith('word/header') and filename.endswith('.xml'):
-                    # Process header files (e.g., word/header1.xml, word/header2.xml)
-                    header_xml = zip_data[filename].decode('utf-8')
-                    if '{{revNo}}' in header_xml or '{{date}}' in header_xml:
-                        # Update the header XML with new revNo and date
-                        updated_header_xml = header_xml.replace('{{revNo}}', new_rev_no).replace('{{date}}', new_date)
-                        zip_data[filename] = updated_header_xml.encode('utf-8')
+                if filename.endswith('.xml'):  # Check all XML files (headers, footers, document)
+                    xml_content = zip_data[filename].decode('utf-8', errors='ignore')
+                    if '{{rev}}' in xml_content or '{{date}}' in xml_content:
+                        # Update the XML with new rev and date
+                        updated_xml = xml_content.replace('{{rev}}', new_rev).replace('{{date}}', new_date)
+                        zip_data[filename] = updated_xml.encode('utf-8')
                         updated = True
 
             if not updated:
-                return JsonResponse({"error": "Could not find {{revNo}} or {{date}} in any header file."}, status=500)
+                return JsonResponse({"error": "Could not find {{rev}} or {{date}} in any XML file."}, status=500)
 
-            # 3. Create a new .docx file with the updated header
+            # 3. Create a new .docx file with the updated content
             output = BytesIO()
             with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zip_out:
                 # Write all files
                 for filename, content in zip_data.items():
                     zip_out.writestr(filename, content)
 
-            # 4. Save the updated .docx back to the original file
-            with open(template_path, 'wb') as f:
+            # 4. Save the updated .docx to the output file
+            with open(output_path, 'wb') as f:
                 f.write(output.getvalue())
 
             # 5. Serve the updated .docx file as an inline file for preview/download
-            docx_file = open(template_path, 'rb')
+            docx_file = open(output_path, 'rb')
             response = FileResponse(docx_file, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
             response['Content-Disposition'] = f'inline; filename="template_application.docx"'
 
