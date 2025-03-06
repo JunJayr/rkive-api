@@ -1,6 +1,8 @@
 import os
 import pythoncom
+import zipfile 
 
+from io import BytesIO
 from docxtpl import DocxTemplate
 from docx2pdf import convert
 
@@ -204,20 +206,40 @@ class ApplicationAdminDocxView(APIView):
             return JsonResponse({"error": "Template file not found."}, status=404)
         
         try:
-            # 1. Load the document
-            doc = DocxTemplate(template_path)
+            # 1. Read the .docx file as a ZIP archive and store its contents
+            zip_data = {}
+            with zipfile.ZipFile(template_path, 'r') as zip_ref:
+                for item in zip_ref.infolist():
+                    zip_data[item.filename] = zip_ref.read(item.filename)
 
-            # 2. Create a selective context with only revNo and date from the request data
-            selective_context = {
-                'revNo': context.get('revNo', '{{revNo}}'),  # Use provided value or keep original placeholder
-                'date': context.get('date', '{{date}}')      # Use provided value or keep original placeholder
-            }
+            # 2. Find the header file containing {{revNo}} and {{date}}
+            new_rev_no = context.get('revNo', '{{revNo}}')
+            new_date = context.get('date', '{{date}}')
+            updated = False
 
-            # 3. Render the document with the selective context
-            doc.render(selective_context)
+            for filename in zip_data.keys():
+                if filename.startswith('word/header') and filename.endswith('.xml'):
+                    # Process header files (e.g., word/header1.xml, word/header2.xml)
+                    header_xml = zip_data[filename].decode('utf-8')
+                    if '{{revNo}}' in header_xml or '{{date}}' in header_xml:
+                        # Update the header XML with new revNo and date
+                        updated_header_xml = header_xml.replace('{{revNo}}', new_rev_no).replace('{{date}}', new_date)
+                        zip_data[filename] = updated_header_xml.encode('utf-8')
+                        updated = True
 
-            # 4. Save the rendered document back to the same file, overwriting the original
-            doc.save(template_path)
+            if not updated:
+                return JsonResponse({"error": "Could not find {{revNo}} or {{date}} in any header file."}, status=500)
+
+            # 3. Create a new .docx file with the updated header
+            output = BytesIO()
+            with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zip_out:
+                # Write all files
+                for filename, content in zip_data.items():
+                    zip_out.writestr(filename, content)
+
+            # 4. Save the updated .docx back to the original file
+            with open(template_path, 'wb') as f:
+                f.write(output.getvalue())
 
             # 5. Serve the updated .docx file as an inline file for preview/download
             docx_file = open(template_path, 'rb')
