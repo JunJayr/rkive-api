@@ -8,7 +8,6 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from .models import Manuscript
 from datetime import datetime
-from django.http import JsonResponse
 from django.http import HttpResponse, JsonResponse, FileResponse, Http404
 from django.conf import settings
 from djoser.social.views import ProviderAuthView
@@ -139,7 +138,7 @@ class LogoutView(APIView):
 
         return response
 
-#Format Submission
+#Defense Application Form / User
 class ApplicationDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
@@ -192,6 +191,45 @@ class ApplicationDocxView(APIView):
             # Uninitialize COM to free up resources
             pythoncom.CoUninitialize()
 
+#Defense Application Form / Admin
+class ApplicationAdminDocxView(APIView):
+    def post(self, request, *args, **kwargs):
+        context = request.data
+        template_path = os.path.join(
+            settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application.docx'
+        )
+
+        # Check if the template file exists
+        if not os.path.exists(template_path):
+            return JsonResponse({"error": "Template file not found."}, status=404)
+        
+        try:
+            # 1. Load the document
+            doc = DocxTemplate(template_path)
+
+            # 2. Create a selective context with only revNo and date from the request data
+            selective_context = {
+                'revNo': context.get('revNo', '{{revNo}}'),  # Use provided value or keep original placeholder
+                'date': context.get('date', '{{date}}')      # Use provided value or keep original placeholder
+            }
+
+            # 3. Render the document with the selective context
+            doc.render(selective_context)
+
+            # 4. Save the rendered document back to the same file, overwriting the original
+            doc.save(template_path)
+
+            # 5. Serve the updated .docx file as an inline file for preview/download
+            docx_file = open(template_path, 'rb')
+            response = FileResponse(docx_file, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            response['Content-Disposition'] = f'inline; filename="template_application.docx"'
+
+            return response
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+#Panel Application Form / User
 class PanelDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
