@@ -9,6 +9,7 @@ from .views import(
     ApplicationDocxView,
     ApplicationAdminDocxView,
     PanelDocxView,
+    PanelAdminDocxView,
     ManuscriptSubmissionView,
     DocumentCountView,
     ListDocumentFilesView,
@@ -30,6 +31,7 @@ urlpatterns = [
     path('application-docx/', ApplicationDocxView.as_view()),
     path('defense-application-admin/', ApplicationAdminDocxView.as_view()),
     path('panel-docx/', PanelDocxView.as_view()),
+    path('defense-panel-admin/', PanelAdminDocxView.as_view()),
     path('manuscripts/', ManuscriptSubmissionView.as_view()),
 
     path('document-count/', DocumentCountView.as_view()),
