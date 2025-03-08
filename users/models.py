@@ -6,7 +6,7 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 
-#User Creation
+# Custom User Manager
 class UserAccountManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
