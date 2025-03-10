@@ -53,6 +53,10 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
+    class Meta:
+        verbose_name = "User Accounts"
+        verbose_name_plural = "Accounts"
+
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
 
@@ -67,7 +71,7 @@ class Manuscript(models.Model):
 
     class Meta:
         verbose_name = "Manuscript"
-        verbose_name_plural = "Manuscripts"
+        verbose_name_plural = "Student Manuscripts"
         ordering = ['-created_at']  # Show most recent first
 
     def __str__(self):
@@ -87,7 +91,7 @@ class ApplicationDefense(models.Model):
 
     class Meta:
         verbose_name = "Application Defense"
-        verbose_name_plural = "Application Defenses"
+        verbose_name_plural = "Student Application Defense"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.pdf_file.name}"
@@ -101,7 +105,7 @@ class PanelDefense(models.Model):
 
     class Meta:
         verbose_name = "Panel Defense"
-        verbose_name_plural = "Panel Defenses"
+        verbose_name_plural = "Student Panel Defense"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.pdf_file.name}"

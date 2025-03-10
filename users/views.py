@@ -269,6 +269,11 @@ class PanelDocxView(APIView):
         context = request.data
         user = request.user
 
+        context.update({
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        })
+
         template_path = os.path.join(
             settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_panel.docx'
         )
@@ -300,37 +305,32 @@ class PanelDocxView(APIView):
             # Convert DOCX to PDF
             convert(docx_file_path, pdf_file_path)
 
-            # Ensure PDF file was created
             if not os.path.exists(pdf_file_path):
                 return JsonResponse({"error": "PDF file conversion failed."}, status=500)
 
             # Save record in database
-            try:
-                PanelDefense.objects.create(
-                    first_name=user.first_name,
-                    last_name=user.last_name,
-                    docx_file=f"panel_nomination/{docx_filename}",
-                    pdf_file=f"panel_nomination/{pdf_filename}"
-                )
-            except Exception as db_error:
-                return JsonResponse({"error": f"Database error: {str(db_error)}"}, status=500)
+            PanelDefense.objects.create(
+                first_name=user.first_name,
+                last_name=user.last_name,
+                docx_file=f"panel_nomination/{docx_filename}",
+                pdf_file=f"panel_nomination/{pdf_filename}"
+            )
 
             # Remove DOCX file (optional)
             if os.path.exists(docx_file_path):
                 os.remove(docx_file_path)
 
-            # Serve the PDF
-            with open(pdf_file_path, 'rb') as pdf_file:
-                response = FileResponse(pdf_file, content_type='application/pdf')
-                response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
-                return response
+            # Serve the PDF (FIXED)
+            pdf_file = open(pdf_file_path, 'rb')  # Keep file open
+            response = FileResponse(pdf_file, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+            return response
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
         finally:
             pythoncom.CoUninitialize()
-
 
 #Panel Application Form / Admin
 class PanelAdminDocxView(APIView):
