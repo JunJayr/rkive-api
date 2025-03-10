@@ -8,7 +8,6 @@ from docx2pdf import convert
 
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from .models import Manuscript
 from datetime import datetime
 from django.http import HttpResponse, JsonResponse, FileResponse, Http404
 from django.conf import settings
@@ -22,6 +21,10 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView
+)
+from .models import ( 
+    Manuscript, 
+    ApplicationDefense,
 )
 
 #AUTHENTICATION
@@ -144,44 +147,51 @@ class LogoutView(APIView):
 class ApplicationDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
+        user = request.user  # Get the authenticated user
+
         template_path = os.path.join(
             settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application.docx'
         )
 
         if not os.path.exists(template_path):
             return JsonResponse({"error": "Template file not found."}, status=404)
-        
+
         try:
-            # Initialize COM before calling `convert`
             pythoncom.CoInitialize()
 
-            # 1. Load and render the document
+            # Load and render the document
             doc = DocxTemplate(template_path)
             doc.render(context)
 
-            # 2. Generate a unique filename for the .docx
-            docx_filename = f"Application-for-Oral-Defense_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-            docx_file_path = os.path.join(
-                settings.MEDIA_ROOT, "generated_documents", docx_filename
-            )
+            # Generate filenames
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            docx_filename = f"Application-for-Oral-Defense_{timestamp}.docx"
+            pdf_filename = docx_filename.replace('.docx', '.pdf')
+
+            # File paths
+            docx_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", docx_filename)
+            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
+
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
             doc.save(docx_file_path)
 
-            # 3. Convert the .docx to .pdf (Ensure COM is initialized)
-            pdf_filename = docx_filename.replace('.docx', '.pdf')
-            pdf_file_path = os.path.join(
-                settings.MEDIA_ROOT, "generated_documents", pdf_filename
-            )
+            # Convert DOCX to PDF
             convert(docx_file_path, pdf_file_path)
 
-            # 4. Remove the .docx file (if not needed anymore)
+            # Save record in the database
+            doc_record = ApplicationDefense.objects.create(
+                first_name=user.first_name,  # Store first name
+                last_name=user.last_name,    # Store last name
+                docx_file=f"generated_documents/{docx_filename}",
+                pdf_file=f"generated_documents/{pdf_filename}"
+            )
+
+            # Remove DOCX file (optional)
             os.remove(docx_file_path)
 
-            # 5. Serve the PDF as an inline file so the user can preview/download
+            # Serve the PDF
             pdf_file = open(pdf_file_path, 'rb')
             response = FileResponse(pdf_file, content_type='application/pdf')
-
-            # Inline content-disposition allows preview in the browser and user download from there
             response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
 
             return response
@@ -190,7 +200,6 @@ class ApplicationDocxView(APIView):
             return JsonResponse({"error": str(e)}, status=500)
 
         finally:
-            # Uninitialize COM to free up resources
             pythoncom.CoUninitialize()
 
 #Defense Application Form / Admin
@@ -375,10 +384,13 @@ class ManuscriptSubmissionView(APIView):
 
         # Save manuscript
         manuscript = Manuscript.objects.create(title=title, description=description, pdf=pdf)
+        user = request.user
 
         return JsonResponse({
             "message": "Manuscript submitted successfully",
             "id": manuscript.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "title": manuscript.title,
             "description": manuscript.description,
             "pdf_url": request.build_absolute_uri(manuscript.pdf.url),
@@ -387,6 +399,7 @@ class ManuscriptSubmissionView(APIView):
 
     def get(self, request, *args, **kwargs):
         search_query = request.GET.get('q', '').strip()
+        user = request.user
 
         # Filter manuscripts by title or description if search_query is provided
         manuscripts = Manuscript.objects.filter(
@@ -397,6 +410,8 @@ class ManuscriptSubmissionView(APIView):
         data = [
             {
                 "id": manuscript.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "title": manuscript.title,
                 "description": manuscript.description,
                 "pdf_url": request.build_absolute_uri(manuscript.pdf.url),

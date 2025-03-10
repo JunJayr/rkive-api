@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserAccount, Manuscript
+from .models import UserAccount, Manuscript, ApplicationDefense
 
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
@@ -9,5 +9,10 @@ class UserAccountAdmin(admin.ModelAdmin):
 
 @admin.register(Manuscript)
 class ManuscriptAdmin(admin.ModelAdmin):
-    list_display = ('title', 'description', 'pdf', 'created_at')
+    list_display = ('first_name', 'last_name', 'title', 'description', 'pdf', 'created_at')
+    search_fields = ('title', 'description')
+
+@admin.register(ApplicationDefense)
+class ApplicationDefenseAdmin(admin.ModelAdmin):
+    list_display = ('id', 'first_name', 'last_name', 'pdf_file', 'created_at')
     search_fields = ('title', 'description')

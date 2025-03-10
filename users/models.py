@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.models import (
     BaseUserManager,
@@ -60,6 +61,8 @@ class Manuscript(models.Model):
     """
     Model to store research, thesis, or capstone manuscripts.
     """
+    first_name = models.CharField(max_length=255, null=True)
+    last_name = models.CharField(max_length=255, null=True)
     title = models.CharField(max_length=200, help_text="Title of the manuscript")
     description = models.TextField(blank=True, help_text="Brief description or abstract of the manuscript")  # Added field
     pdf = models.FileField(upload_to='manuscripts/', help_text="Upload the PDF file here")
@@ -81,4 +84,16 @@ class Manuscript(models.Model):
         """
         return self.pdf.name.split('/')[-1]
 
+class ApplicationDefense(models.Model):
+    first_name = models.CharField(max_length=255, null=True)  # Allow NULL values temporarily
+    last_name = models.CharField(max_length=255, null=True)   # Allow NULL values temporarily
+    docx_file = models.FileField(upload_to='generated_documents/')
+    pdf_file = models.FileField(upload_to='generated_documents/')
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        verbose_name = "Application Defense"
+        verbose_name_plural = "Application Defenses"
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.pdf_file.name}"
