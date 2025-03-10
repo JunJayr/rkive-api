@@ -81,13 +81,27 @@ class Manuscript(models.Model):
 class ApplicationDefense(models.Model):
     first_name = models.CharField(max_length=255, null=True)  # Allow NULL values temporarily
     last_name = models.CharField(max_length=255, null=True)   # Allow NULL values temporarily
-    docx_file = models.FileField(upload_to='generated_documents/')
-    pdf_file = models.FileField(upload_to='generated_documents/')
+    docx_file = models.FileField(upload_to='defense_application/')
+    pdf_file = models.FileField(upload_to='defense_application/')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Application Defense"
         verbose_name_plural = "Application Defenses"
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.pdf_file.name}"
+
+class PanelDefense(models.Model):
+    first_name = models.CharField(max_length=255, null=True)  # Allow NULL values temporarily
+    last_name = models.CharField(max_length=255, null=True)   # Allow NULL values temporarily
+    docx_file = models.FileField(upload_to='panel_nomination/')
+    pdf_file = models.FileField(upload_to='panel_nomination/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Panel Defense"
+        verbose_name_plural = "Panel Defenses"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.pdf_file.name}"

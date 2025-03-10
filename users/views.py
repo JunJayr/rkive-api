@@ -25,6 +25,7 @@ from rest_framework_simplejwt.views import (
 from .models import ( 
     Manuscript, 
     ApplicationDefense,
+    PanelDefense,
 )
 
 #AUTHENTICATION
@@ -169,8 +170,8 @@ class ApplicationDocxView(APIView):
             pdf_filename = docx_filename.replace('.docx', '.pdf')
 
             # File paths
-            docx_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", docx_filename)
-            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
+            docx_file_path = os.path.join(settings.MEDIA_ROOT, "defense_application", docx_filename)
+            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "defense_application", pdf_filename)
 
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
             doc.save(docx_file_path)
@@ -182,8 +183,8 @@ class ApplicationDocxView(APIView):
             doc_record = ApplicationDefense.objects.create(
                 first_name=user.first_name,  # Store first name
                 last_name=user.last_name,    # Store last name
-                docx_file=f"generated_documents/{docx_filename}",
-                pdf_file=f"generated_documents/{pdf_filename}"
+                docx_file=f"defense_application/{docx_filename}",
+                pdf_file=f"defense_application/{pdf_filename}"
             )
 
             # Remove DOCX file (optional)
@@ -266,49 +267,70 @@ class ApplicationAdminDocxView(APIView):
 class PanelDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
+        user = request.user
+
         template_path = os.path.join(
             settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_panel.docx'
         )
 
         if not os.path.exists(template_path):
             return JsonResponse({"error": "Template file not found."}, status=404)
-        
+
         try:
-            # Initialize COM before using `convert`
             pythoncom.CoInitialize()
 
-            # 1. Render the document
+            # Render the document
             doc = DocxTemplate(template_path)
             doc.render(context)
 
-            # 2. Generate a unique filename for the .docx
-            docx_filename = f"IT-Nomination-of-Members-of-Oral-Examination-Panel_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-            docx_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", docx_filename)
+            # Generate filenames
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            docx_filename = f"IT-Nomination-of-Members-of-Oral-Examination-Panel_{timestamp}.docx"
+            pdf_filename = docx_filename.replace('.docx', '.pdf')
+
+            # File paths
+            docx_file_path = os.path.join(settings.MEDIA_ROOT, "panel_nomination", docx_filename)
+            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "panel_nomination", pdf_filename)
+
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
+
+            # Save DOCX file
             doc.save(docx_file_path)
 
-            # 3. Convert .docx to .pdf (Ensure COM is initialized)
-            pdf_filename = docx_filename.replace('.docx', '.pdf')
-            pdf_file_path = os.path.join(settings.MEDIA_ROOT, "generated_documents", pdf_filename)
+            # Convert DOCX to PDF
             convert(docx_file_path, pdf_file_path)
 
-            # 4. Remove the .docx file (optional)
-            os.remove(docx_file_path)
+            # Ensure PDF file was created
+            if not os.path.exists(pdf_file_path):
+                return JsonResponse({"error": "PDF file conversion failed."}, status=500)
 
-            # 5. Serve the PDF as an inline file so the user can preview/download
-            pdf_file = open(pdf_file_path, 'rb')
-            response = FileResponse(pdf_file, content_type='application/pdf')
+            # Save record in database
+            try:
+                PanelDefense.objects.create(
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    docx_file=f"panel_nomination/{docx_filename}",
+                    pdf_file=f"panel_nomination/{pdf_filename}"
+                )
+            except Exception as db_error:
+                return JsonResponse({"error": f"Database error: {str(db_error)}"}, status=500)
 
-            # Inline content-disposition allows preview in the browser and user download from there
-            response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+            # Remove DOCX file (optional)
+            if os.path.exists(docx_file_path):
+                os.remove(docx_file_path)
 
-            return response
-        
+            # Serve the PDF
+            with open(pdf_file_path, 'rb') as pdf_file:
+                response = FileResponse(pdf_file, content_type='application/pdf')
+                response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+                return response
+
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
         finally:
-            pythoncom.CoUninitialize()  # Ensure COM is cleaned up
+            pythoncom.CoUninitialize()
+
 
 #Panel Application Form / Admin
 class PanelAdminDocxView(APIView):
