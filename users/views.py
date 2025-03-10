@@ -375,6 +375,8 @@ class ManuscriptSubmissionView(APIView):
     parser_classes = (MultiPartParser, FormParser)  # Allows file uploads
 
     def post(self, request, *args, **kwargs):
+        user = request.user  # Get the authenticated user
+
         title = request.data.get("title")
         description = request.data.get("description", "").strip()  # Optional description
         pdf = request.FILES.get("pdf")
@@ -382,15 +384,20 @@ class ManuscriptSubmissionView(APIView):
         if not title or not pdf:
             return JsonResponse({"error": "Title and PDF file are required."}, status=400)
 
-        # Save manuscript
-        manuscript = Manuscript.objects.create(title=title, description=description, pdf=pdf)
-        user = request.user
+        # Save manuscript with user info
+        manuscript = Manuscript.objects.create(
+            first_name=user.first_name,
+            last_name=user.last_name,
+            title=title,
+            description=description,
+            pdf=pdf
+        )
 
         return JsonResponse({
             "message": "Manuscript submitted successfully",
             "id": manuscript.id,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
+            "first_name": manuscript.first_name,
+            "last_name": manuscript.last_name,
             "title": manuscript.title,
             "description": manuscript.description,
             "pdf_url": request.build_absolute_uri(manuscript.pdf.url),
@@ -399,7 +406,6 @@ class ManuscriptSubmissionView(APIView):
 
     def get(self, request, *args, **kwargs):
         search_query = request.GET.get('q', '').strip()
-        user = request.user
 
         # Filter manuscripts by title or description if search_query is provided
         manuscripts = Manuscript.objects.filter(
@@ -410,8 +416,8 @@ class ManuscriptSubmissionView(APIView):
         data = [
             {
                 "id": manuscript.id,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
+                "first_name": manuscript.first_name,
+                "last_name": manuscript.last_name,
                 "title": manuscript.title,
                 "description": manuscript.description,
                 "pdf_url": request.build_absolute_uri(manuscript.pdf.url),

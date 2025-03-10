@@ -58,13 +58,10 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
 #Submission and Viewing of Manuscript
 class Manuscript(models.Model):
-    """
-    Model to store research, thesis, or capstone manuscripts.
-    """
-    first_name = models.CharField(max_length=255, null=True)
-    last_name = models.CharField(max_length=255, null=True)
+    first_name = models.CharField(max_length=255, null=True)  # Required field
+    last_name = models.CharField(max_length=255, null=True)   # Required field
     title = models.CharField(max_length=200, help_text="Title of the manuscript")
-    description = models.TextField(blank=True, help_text="Brief description or abstract of the manuscript")  # Added field
+    description = models.TextField(blank=True, help_text="Brief description or abstract of the manuscript")  
     pdf = models.FileField(upload_to='manuscripts/', help_text="Upload the PDF file here")
     created_at = models.DateTimeField(default=timezone.now, help_text="Timestamp of submission")
 
@@ -74,14 +71,11 @@ class Manuscript(models.Model):
         ordering = ['-created_at']  # Show most recent first
 
     def __str__(self):
-        return self.title
+        return f"{self.first_name} {self.last_name} - {self.title}"
 
     @property
     def filename(self):
-        """
-        Returns the name of the uploaded PDF file.
-        Example: If file is `manuscripts/my_thesis.pdf`, returns `my_thesis.pdf`
-        """
+        """ Returns the name of the uploaded PDF file. """
         return self.pdf.name.split('/')[-1]
 
 class ApplicationDefense(models.Model):
