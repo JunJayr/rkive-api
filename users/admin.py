@@ -5,7 +5,6 @@ from .models import UserAccount, Manuscript, ApplicationDefense, PanelDefense
 class UserAccountAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'email', 'is_active',  'is_staff', 'is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')  
     search_fields = ('first_name', 'last_name', 'email')
-    list_filter = ('is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')
 
 @admin.register(Manuscript)
 class ManuscriptAdmin(admin.ModelAdmin):
@@ -25,8 +24,6 @@ class ApplicationDefenseAdmin(admin.ModelAdmin):
         'first_name', 'last_name', 'department', 'lead_researcher', 'research_title',
         'panel_chair', 'adviser', 'panel1', 'panel2', 'panel3', 'documenter'
     )
-    
-    list_filter = ('department', 'datetime_defense', 'place_defense', 'created_at')
 
 @admin.register(PanelDefense)
 class PanelDefenseAdmin(admin.ModelAdmin):
