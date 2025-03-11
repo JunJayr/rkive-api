@@ -120,15 +120,23 @@ class ApplicationDefense(models.Model):
         return f"{self.first_name} {self.last_name} - {self.research_title}"
 
 class PanelDefense(models.Model):
-    first_name = models.CharField(max_length=255, null=True)  # Allow NULL values temporarily
-    last_name = models.CharField(max_length=255, null=True)   # Allow NULL values temporarily
+    first_name = models.CharField(max_length=255, blank=True, null=True)
+    last_name = models.CharField(max_length=255, blank=True, null=True)
+    research_title = models.TextField(blank=True, null=True)
+    lead_researcher = models.CharField(max_length=255, blank=True, null=True)
+    co_researcher = models.CharField(max_length=255, blank=True, null=True)
+    co_researcher1 = models.CharField(max_length=255, blank=True, null=True)
+    co_researcher2 = models.CharField(max_length=255, blank=True, null=True)
+    co_researcher3 = models.CharField(max_length=255, blank=True, null=True)
+    co_researcher4 = models.CharField(max_length=255, blank=True, null=True)
+    adviser = models.CharField(max_length=255, blank=True, null=True)
+    panel_chair = models.CharField(max_length=255, blank=True, null=True)
+    panel1 = models.CharField(max_length=255, blank=True, null=True)
+    panel2 = models.CharField(max_length=255, blank=True, null=True)
+    panel3 = models.CharField(max_length=255, blank=True, null=True)
     docx_file = models.FileField(upload_to='panel_nomination/')
     pdf_file = models.FileField(upload_to='panel_nomination/')
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        verbose_name = "Panel Defense"
-        verbose_name_plural = "Student Panel Defense"
-
     def __str__(self):
-        return f"{self.first_name} {self.last_name} - {self.pdf_file.name}"
+        return f"{self.first_name} {self.last_name} - {self.research_title}"

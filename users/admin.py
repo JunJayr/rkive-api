@@ -21,7 +21,6 @@ class ApplicationDefenseAdmin(admin.ModelAdmin):
         'panel_chair', 'adviser', 'panel1', 'panel2', 'panel3',
         'documenter', 'pdf_file', 'created_at'
     )
-    
     search_fields = (
         'first_name', 'last_name', 'department', 'lead_researcher', 'research_title',
         'panel_chair', 'adviser', 'panel1', 'panel2', 'panel3', 'documenter'
@@ -31,5 +30,14 @@ class ApplicationDefenseAdmin(admin.ModelAdmin):
 
 @admin.register(PanelDefense)
 class PanelDefenseAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'pdf_file', 'created_at')
-    search_fields = ('title', 'description')
+    list_display = (
+        'first_name', 'last_name', 'research_title', 'lead_researcher',
+        'co_researcher', 'co_researcher1', 'co_researcher2', 'co_researcher3', 'co_researcher4',
+        'adviser', 'panel_chair', 'panel1', 'panel2', 'panel3', 'pdf_file', 'created_at'
+    )
+    search_fields = (
+        'first_name', 'last_name', 'research_title', 'lead_researcher',
+        'panel_chair', 'adviser', 'panel1', 'panel2', 'panel3'
+    )
+    
+

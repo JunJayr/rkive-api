@@ -292,11 +292,6 @@ class PanelDocxView(APIView):
         context = request.data
         user = request.user
 
-        context.update({
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-        })
-
         template_path = os.path.join(
             settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_panel.docx'
         )
@@ -307,13 +302,9 @@ class PanelDocxView(APIView):
         try:
             pythoncom.CoInitialize()
 
-            # Render the document
-            doc = DocxTemplate(template_path)
-            doc.render(context)
-
             # Generate filenames
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            docx_filename = f"IT-Nomination-of-Members-of-Oral-Examination-Panel_{timestamp}.docx"
+            docx_filename = f"Panel-Nomination_{timestamp}.docx"
             pdf_filename = docx_filename.replace('.docx', '.pdf')
 
             # File paths
@@ -322,31 +313,47 @@ class PanelDocxView(APIView):
 
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
 
-            # Save DOCX file
+            # Load and render DOCX template
+            doc = DocxTemplate(template_path)
+            doc.render(context)
             doc.save(docx_file_path)
 
             # Convert DOCX to PDF
-            convert(docx_file_path, pdf_file_path)
+            word = Dispatch("Word.Application")
+            word.Visible = False
+            doc = word.Documents.Open(docx_file_path)
+            doc.SaveAs(pdf_file_path, FileFormat=17)  # 17 = wdFormatPDF
+            doc.Close()
+            word.Quit()
 
-            if not os.path.exists(pdf_file_path):
-                return JsonResponse({"error": "PDF file conversion failed."}, status=500)
-
-            # Save record in database
-            PanelDefense.objects.create(
+            # Save record in the database
+            panel_record = PanelDefense.objects.create(
                 first_name=user.first_name,
                 last_name=user.last_name,
+                research_title=context.get("research_title"),
+                lead_researcher=context.get("lead_researcher"),
+                co_researcher=context.get("co_researcher"),
+                co_researcher1=context.get("co_researcher1"),
+                co_researcher2=context.get("co_researcher2"),
+                co_researcher3=context.get("co_researcher3"),
+                co_researcher4=context.get("co_researcher4"),
+                adviser=context.get("adviser"),
+                panel_chair=context.get("panel_chair"),
+                panel1=context.get("panel1"),
+                panel2=context.get("panel2"),
+                panel3=context.get("panel3"),
                 docx_file=f"panel_nomination/{docx_filename}",
                 pdf_file=f"panel_nomination/{pdf_filename}"
             )
 
-            # Remove DOCX file (optional)
-            if os.path.exists(docx_file_path):
-                os.remove(docx_file_path)
+            # Remove DOCX file after conversion (optional)
+            os.remove(docx_file_path)
 
-            # Serve the PDF (FIXED)
-            pdf_file = open(pdf_file_path, 'rb')  # Keep file open
+            # Serve the PDF file
+            pdf_file = open(pdf_file_path, 'rb')
             response = FileResponse(pdf_file, content_type='application/pdf')
             response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+
             return response
 
         except Exception as e:
