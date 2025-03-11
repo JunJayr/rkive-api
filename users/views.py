@@ -1,6 +1,7 @@
 import os
 import pythoncom
 import zipfile 
+from win32com.client import Dispatch
 
 from io import BytesIO
 from docxtpl import DocxTemplate
@@ -147,8 +148,8 @@ class LogoutView(APIView):
 #Defense Application Form / User
 class ApplicationDocxView(APIView):
     def post(self, request, *args, **kwargs):
-        context = request.data
-        user = request.user  # Get the authenticated user
+        context = request.data  # JSON data from request
+        user = request.user  # Authenticated user
 
         template_path = os.path.join(
             settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application.docx'
@@ -160,10 +161,6 @@ class ApplicationDocxView(APIView):
         try:
             pythoncom.CoInitialize()
 
-            # Load and render the document
-            doc = DocxTemplate(template_path)
-            doc.render(context)
-
             # Generate filenames
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             docx_filename = f"Application-for-Oral-Defense_{timestamp}.docx"
@@ -174,23 +171,49 @@ class ApplicationDocxView(APIView):
             pdf_file_path = os.path.join(settings.MEDIA_ROOT, "defense_application", pdf_filename)
 
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
+
+            # Load and render DOCX template
+            doc = DocxTemplate(template_path)
+            doc.render(context)
             doc.save(docx_file_path)
 
-            # Convert DOCX to PDF
-            convert(docx_file_path, pdf_file_path)
+            # Convert DOCX to PDF (Using Microsoft Word COM Object)
+            word = Dispatch("Word.Application")
+            word.Visible = False
+            doc = word.Documents.Open(docx_file_path)
+            doc.SaveAs(pdf_file_path, FileFormat=17)  # 17 = wdFormatPDF
+            doc.Close()
+            word.Quit()
 
             # Save record in the database
             doc_record = ApplicationDefense.objects.create(
-                first_name=user.first_name,  # Store first name
-                last_name=user.last_name,    # Store last name
+                first_name=user.first_name,
+                last_name=user.last_name,
+                department=context.get("department"),
+                lead_researcher=context.get("lead_researcher"),
+                lead_contactno=context.get("lead_contactno"),
+                co_researcher=context.get("co_researcher"),
+                co_researcher1=context.get("co_researcher1"),
+                co_researcher2=context.get("co_researcher2"),
+                co_researcher3=context.get("co_researcher3"),
+                co_researcher4=context.get("co_researcher4"),
+                research_title=context.get("research_title"),
+                datetime_defense=context.get("datetime_defense"),
+                place_defense=context.get("place_defense"),
+                panel_chair=context.get("panel_chair"),
+                adviser=context.get("adviser"),
+                panel1=context.get("panel1"),
+                panel2=context.get("panel2"),
+                panel3=context.get("panel3"),
+                documenter=context.get("documenter"),
                 docx_file=f"defense_application/{docx_filename}",
-                pdf_file=f"defense_application/{pdf_filename}"
+                pdf_file=f"defense_application/{pdf_filename}",
             )
 
-            # Remove DOCX file (optional)
+            # Remove DOCX file after conversion (optional)
             os.remove(docx_file_path)
 
-            # Serve the PDF
+            # Serve the PDF file
             pdf_file = open(pdf_file_path, 'rb')
             response = FileResponse(pdf_file, content_type='application/pdf')
             response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
