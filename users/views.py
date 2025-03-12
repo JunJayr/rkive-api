@@ -27,6 +27,7 @@ from .models import (
     Manuscript, 
     ApplicationDefense,
     PanelDefense,
+    Faculty,
 )
 
 #AUTHENTICATION
@@ -172,9 +173,22 @@ class ApplicationDocxView(APIView):
 
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
 
+            # Fetch Faculty name by ID
+            def get_faculty_name(faculty_id):
+                faculty = Faculty.objects.filter(id=faculty_id).first()
+                return faculty.name if faculty else "Unknown"
+
+            # Preserve faculty IDs for saving, but fetch names for DOCX
+            docx_context = context.copy()
+            docx_context["panel_chair"] = get_faculty_name(context.get("panel_chair"))
+            docx_context["adviser"] = get_faculty_name(context.get("adviser"))
+            docx_context["panel1"] = get_faculty_name(context.get("panel1"))
+            docx_context["panel2"] = get_faculty_name(context.get("panel2"))
+            docx_context["panel3"] = get_faculty_name(context.get("panel3"))
+
             # Load and render DOCX template
             doc = DocxTemplate(template_path)
-            doc.render(context)
+            doc.render(docx_context)
             doc.save(docx_file_path)
 
             # Convert DOCX to PDF (Using Microsoft Word COM Object)
@@ -185,7 +199,7 @@ class ApplicationDocxView(APIView):
             doc.Close()
             word.Quit()
 
-            # Save record in the database
+            # Save record in the database using faculty IDs
             doc_record = ApplicationDefense.objects.create(
                 first_name=user.first_name,
                 last_name=user.last_name,
@@ -200,13 +214,12 @@ class ApplicationDocxView(APIView):
                 research_title=context.get("research_title"),
                 datetime_defense=context.get("datetime_defense"),
                 place_defense=context.get("place_defense"),
-                panel_chair=context.get("panel_chair"),
-                adviser=context.get("adviser"),
-                panel1=context.get("panel1"),
-                panel2=context.get("panel2"),
-                panel3=context.get("panel3"),
+                panel_chair=Faculty.objects.get(id=int(context.get("panel_chair"))),
+                adviser=Faculty.objects.get(id=int(context.get("adviser"))),
+                panel1=Faculty.objects.get(id=int(context.get("panel1"))),
+                panel2=Faculty.objects.get(id=int(context.get("panel2"))),
+                panel3=Faculty.objects.get(id=int(context.get("panel3"))),
                 documenter=context.get("documenter"),
-                docx_file=f"defense_application/{docx_filename}",
                 pdf_file=f"defense_application/{pdf_filename}",
             )
 
