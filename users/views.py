@@ -326,9 +326,22 @@ class PanelDocxView(APIView):
 
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
 
+            # Fetch Faculty name by ID
+            def get_faculty_name(faculty_id):
+                faculty = Faculty.objects.filter(id=faculty_id).first()
+                return faculty.name if faculty else "Unknown"
+
+            # Prepare DOCX context with Faculty names
+            docx_context = context.copy()
+            docx_context["adviser"] = get_faculty_name(context.get("adviser"))
+            docx_context["panel_chair"] = get_faculty_name(context.get("panel_chair"))
+            docx_context["panel1"] = get_faculty_name(context.get("panel1"))
+            docx_context["panel2"] = get_faculty_name(context.get("panel2"))
+            docx_context["panel3"] = get_faculty_name(context.get("panel3"))
+
             # Load and render DOCX template
             doc = DocxTemplate(template_path)
-            doc.render(context)
+            doc.render(docx_context)
             doc.save(docx_file_path)
 
             # Convert DOCX to PDF
@@ -339,7 +352,7 @@ class PanelDocxView(APIView):
             doc.Close()
             word.Quit()
 
-            # Save record in the database
+            # Save record in the database using faculty IDs
             panel_record = PanelDefense.objects.create(
                 first_name=user.first_name,
                 last_name=user.last_name,
@@ -350,11 +363,11 @@ class PanelDocxView(APIView):
                 co_researcher2=context.get("co_researcher2"),
                 co_researcher3=context.get("co_researcher3"),
                 co_researcher4=context.get("co_researcher4"),
-                adviser=context.get("adviser"),
-                panel_chair=context.get("panel_chair"),
-                panel1=context.get("panel1"),
-                panel2=context.get("panel2"),
-                panel3=context.get("panel3"),
+                adviser=Faculty.objects.get(id=int(context.get("adviser"))),
+                panel_chair=Faculty.objects.get(id=int(context.get("panel_chair"))),
+                panel1=Faculty.objects.get(id=int(context.get("panel1"))),
+                panel2=Faculty.objects.get(id=int(context.get("panel2"))),
+                panel3=Faculty.objects.get(id=int(context.get("panel3"))),
                 docx_file=f"panel_nomination/{docx_filename}",
                 pdf_file=f"panel_nomination/{pdf_filename}"
             )
