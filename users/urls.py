@@ -28,6 +28,7 @@ urlpatterns = [
     path('user-role/', UserRoleView.as_view()),
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
+    
     path('application-docx/', ApplicationDocxView.as_view()),
     path('defense-application-admin/', ApplicationAdminDocxView.as_view()),
     path('panel-docx/', PanelDocxView.as_view()),
