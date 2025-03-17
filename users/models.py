@@ -27,7 +27,7 @@ class UserAccountManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
-        extra_fields.setdefault("is_dean", False)
+        extra_fields.setdefault("is_dean", True)
         extra_fields.setdefault("is_headdept", False)
         extra_fields.setdefault("is_faculty", False)
         extra_fields.setdefault("is_student", False)

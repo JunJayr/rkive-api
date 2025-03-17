@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import UserAccount, Faculty, Manuscript, ApplicationDefense, PanelDefense
-
+from .models import *
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'email', 'is_active',  'is_staff', 'is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student')  
