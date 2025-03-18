@@ -138,6 +138,10 @@ REST_FRAMEWORK = {
     ]
 }
 
+SIMPLE_JWT = {
+    "USER_ID_FIELD": "userID",  # Ensure it's set to a valid field
+}
+
 DJOSER = {
     'PASSWORD_RESET_CONFIRM_URL': 'password-reset/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': True,

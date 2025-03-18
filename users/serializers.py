@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ApplicationDefense, PanelDefense, Faculty
+from .models import *
 
 class ApplicationDefenseSerializer(serializers.ModelSerializer):
     adviser = serializers.PrimaryKeyRelatedField(queryset=Faculty.objects.all())

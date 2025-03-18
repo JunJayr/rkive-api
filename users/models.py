@@ -2,17 +2,14 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from .managers import UserAccountManager
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    PermissionsMixin
-)
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
-# Custom User Model
 class UserAccount(AbstractBaseUser, PermissionsMixin):
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
+    userID = models.AutoField(primary_key=True)
     email = models.EmailField(unique=True, max_length=255)
     password = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -24,20 +21,25 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     
     objects = UserAccountManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     class Meta:
-        verbose_name = "User Accounts"
-        verbose_name_plural = "Accounts"
+        verbose_name = "User Account"
+        verbose_name_plural = "User Accounts"
 
     def __str__(self):
         return self.email
 
-#Submission and Viewing of Manuscript
+class Faculty(models.Model):
+    facultyID = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    department = models.CharField(max_length=255, blank=True, null=True)
+
 class Manuscript(models.Model):
-    first_name = models.CharField(max_length=255, null=True)
-    last_name = models.CharField(max_length=255, null=True)
+    manuscriptID = models.AutoField(primary_key=True)
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="manuscripts")
     title = models.CharField(max_length=200, help_text="Title of the manuscript")
     description = models.TextField(blank=True, help_text="Brief description or abstract of the manuscript")  
     pdf = models.FileField(upload_to='manuscripts/', help_text="Upload the PDF file here")
@@ -51,22 +53,8 @@ class Manuscript(models.Model):
     def __str__(self):
         return self.title
 
-    @property
-    def filename(self):
-        """ Returns the name of the uploaded PDF file. """
-        return self.pdf.name.split('/')[-1]
-
-class Faculty(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    title = models.CharField(max_length=255, blank=True, null=True)
-    department = models.CharField(max_length=255, blank=True, null=True)  # Added department field
-
-    def __str__(self):
-        return self.name
-
 class ApplicationDefense(models.Model):
-    first_name = models.CharField(max_length=255, null=True, blank=True)
-    last_name = models.CharField(max_length=255, null=True, blank=True)
+    applicationID = models.AutoField(primary_key=True)
     department = models.CharField(max_length=255, null=True, blank=True)
     research_title = models.TextField(null=True, blank=True)
     lead_researcher = models.CharField(max_length=255, null=True, blank=True)
@@ -76,18 +64,17 @@ class ApplicationDefense(models.Model):
     co_researcher2 = models.CharField(max_length=255, blank=True, null=True)
     co_researcher3 = models.CharField(max_length=255, blank=True, null=True)
     co_researcher4 = models.CharField(max_length=255, blank=True, null=True)
-    datetime_defense = models.CharField(max_length=255, blank=True, null=True)
+    datetime_defense = models.CharField(max_length=255,null=True, blank=True)
     place_defense = models.CharField(max_length=255, null=True, blank=True)
-
-    adviser = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="advised_applications")
-    panel_chair = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="chaired_applications")
-    panel1 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel1_applications")
-    panel2 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel2_applications")
-    panel3 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel3_applications")
-    
+    adviser = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="application_adviser")
+    panel_chair = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="application_chair")
+    panel1 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="application_panel1")
+    panel2 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="application_panel2")
+    panel3 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="application_panel3")
     documenter = models.CharField(max_length=255, null=True, blank=True)
     pdf_file = models.FileField(upload_to='defense_application/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="application_defenses")
 
     class Meta:
         verbose_name = "Application Defense"
@@ -97,8 +84,7 @@ class ApplicationDefense(models.Model):
         return self.research_title
 
 class PanelDefense(models.Model):
-    first_name = models.CharField(max_length=255, blank=True, null=True)
-    last_name = models.CharField(max_length=255, blank=True, null=True)
+    panelID = models.AutoField(primary_key=True)
     research_title = models.TextField(blank=True, null=True)
     lead_researcher = models.CharField(max_length=255, blank=True, null=True)
     co_researcher = models.CharField(max_length=255, blank=True, null=True)
@@ -106,16 +92,15 @@ class PanelDefense(models.Model):
     co_researcher2 = models.CharField(max_length=255, blank=True, null=True)
     co_researcher3 = models.CharField(max_length=255, blank=True, null=True)
     co_researcher4 = models.CharField(max_length=255, blank=True, null=True)
-
-    adviser = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="advised_panels")
-    panel_chair = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="chaired_panels")
-    panel1 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel1_panels")
-    panel2 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel2_panels")
-    panel3 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel3_panels")
-
+    adviser = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel_adviser")
+    panel_chair = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel_chair")
+    panel1 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel_panel1")
+    panel2 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel_panel2")
+    panel3 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="panel_panel3")
     docx_file = models.FileField(upload_to='panel_nomination/')
     pdf_file = models.FileField(upload_to='panel_nomination/')
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="panel_defenses")
 
     class Meta:
         verbose_name = "Panel Defense"

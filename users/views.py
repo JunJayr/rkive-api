@@ -173,10 +173,14 @@ class ApplicationDocxView(APIView):
 
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
 
-            # Fetch Faculty name by ID
-            def get_faculty_name(faculty_id):
-                faculty = Faculty.objects.filter(id=faculty_id).first()
+            # Function to fetch Faculty name by facultyID
+            def get_faculty_name(facultyID):
+                faculty = Faculty.objects.filter(facultyID=facultyID).first()
                 return faculty.name if faculty else "Unknown"
+
+            # Function to safely fetch Faculty objects
+            def get_faculty_object(facultyID):
+                return Faculty.objects.filter(facultyID=facultyID).first()
 
             # Preserve faculty IDs for saving, but fetch names for DOCX
             docx_context = context.copy()
@@ -199,10 +203,9 @@ class ApplicationDocxView(APIView):
             doc.Close()
             word.Quit()
 
-            # Save record in the database using faculty IDs
+            # Save record in the database using faculty objects
             doc_record = ApplicationDefense.objects.create(
-                first_name=user.first_name,
-                last_name=user.last_name,
+                user=user,
                 department=context.get("department"),
                 lead_researcher=context.get("lead_researcher"),
                 lead_contactno=context.get("lead_contactno"),
@@ -214,11 +217,11 @@ class ApplicationDocxView(APIView):
                 research_title=context.get("research_title"),
                 datetime_defense=context.get("datetime_defense"),
                 place_defense=context.get("place_defense"),
-                panel_chair=Faculty.objects.get(id=int(context.get("panel_chair"))),
-                adviser=Faculty.objects.get(id=int(context.get("adviser"))),
-                panel1=Faculty.objects.get(id=int(context.get("panel1"))),
-                panel2=Faculty.objects.get(id=int(context.get("panel2"))),
-                panel3=Faculty.objects.get(id=int(context.get("panel3"))),
+                panel_chair=get_faculty_object(context.get("panel_chair")),
+                adviser=get_faculty_object(context.get("adviser")),
+                panel1=get_faculty_object(context.get("panel1")),
+                panel2=get_faculty_object(context.get("panel2")),
+                panel3=get_faculty_object(context.get("panel3")),
                 documenter=context.get("documenter"),
                 pdf_file=f"defense_application/{pdf_filename}",
             )
@@ -238,8 +241,7 @@ class ApplicationDocxView(APIView):
 
         finally:
             pythoncom.CoUninitialize()
-
-#Defense Application Form / Admin
+            
 class ApplicationAdminDocxView(APIView):
     def post(self, request, *args, **kwargs):
         context = request.data
@@ -354,8 +356,7 @@ class PanelDocxView(APIView):
 
             # Save record in the database using faculty IDs
             panel_record = PanelDefense.objects.create(
-                first_name=user.first_name,
-                last_name=user.last_name,
+                user=user,
                 research_title=context.get("research_title"),
                 lead_researcher=context.get("lead_researcher"),
                 co_researcher=context.get("co_researcher"),
