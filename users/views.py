@@ -477,13 +477,11 @@ class ManuscriptSubmissionView(APIView):
 
         return JsonResponse({
             "message": "Manuscript submitted successfully",
-            "id": manuscript.id,
-            "first_name": manuscript.first_name,
-            "last_name": manuscript.last_name,
+            "manuscriptID": manuscript.manuscriptID,
             "title": manuscript.title,
             "description": manuscript.description,
             "pdf_url": request.build_absolute_uri(manuscript.pdf.url),
-            "created_at": manuscript.created_at.strftime("%Y-%m-%d %H:%M:%S"),  # Convert to JSON-friendly format
+            "created_at": manuscript.created_at.strftime("%Y-%m-%d %H:%M:%S"),  # JSON-friendly format
         }, status=201)
 
     def get(self, request, *args, **kwargs):
@@ -497,9 +495,7 @@ class ManuscriptSubmissionView(APIView):
         # Construct the response data
         data = [
             {
-                "id": manuscript.id,
-                "first_name": manuscript.first_name,
-                "last_name": manuscript.last_name,
+                "manuscriptID": manuscript.manuscriptID,
                 "title": manuscript.title,
                 "description": manuscript.description,
                 "pdf_url": request.build_absolute_uri(manuscript.pdf.url),
