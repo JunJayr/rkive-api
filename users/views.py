@@ -304,8 +304,8 @@ class ApplicationAdminDocxView(APIView):
 #Panel Application Form / User
 class PanelDocxView(APIView):
     def post(self, request, *args, **kwargs):
-        context = request.data
-        user = request.user
+        context = request.data  # JSON data from request
+        user = request.user  # Authenticated user
 
         template_path = os.path.join(
             settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_panel.docx'
@@ -328,12 +328,16 @@ class PanelDocxView(APIView):
 
             os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
 
-            # Fetch Faculty name by ID
-            def get_faculty_name(faculty_id):
-                faculty = Faculty.objects.filter(id=faculty_id).first()
+            # Function to fetch Faculty name by facultyID
+            def get_faculty_name(facultyID):
+                faculty = Faculty.objects.filter(facultyID=facultyID).first()
                 return faculty.name if faculty else "Unknown"
 
-            # Prepare DOCX context with Faculty names
+            # Function to safely fetch Faculty objects
+            def get_faculty_object(facultyID):
+                return Faculty.objects.filter(facultyID=facultyID).first()
+
+            # Preserve faculty IDs for saving, but fetch names for DOCX
             docx_context = context.copy()
             docx_context["adviser"] = get_faculty_name(context.get("adviser"))
             docx_context["panel_chair"] = get_faculty_name(context.get("panel_chair"))
@@ -354,7 +358,7 @@ class PanelDocxView(APIView):
             doc.Close()
             word.Quit()
 
-            # Save record in the database using faculty IDs
+            # Save record in the database using faculty objects
             panel_record = PanelDefense.objects.create(
                 user=user,
                 research_title=context.get("research_title"),
@@ -364,13 +368,13 @@ class PanelDocxView(APIView):
                 co_researcher2=context.get("co_researcher2"),
                 co_researcher3=context.get("co_researcher3"),
                 co_researcher4=context.get("co_researcher4"),
-                adviser=Faculty.objects.get(id=int(context.get("adviser"))),
-                panel_chair=Faculty.objects.get(id=int(context.get("panel_chair"))),
-                panel1=Faculty.objects.get(id=int(context.get("panel1"))),
-                panel2=Faculty.objects.get(id=int(context.get("panel2"))),
-                panel3=Faculty.objects.get(id=int(context.get("panel3"))),
+                adviser=get_faculty_object(context.get("adviser")),
+                panel_chair=get_faculty_object(context.get("panel_chair")),
+                panel1=get_faculty_object(context.get("panel1")),
+                panel2=get_faculty_object(context.get("panel2")),
+                panel3=get_faculty_object(context.get("panel3")),
                 docx_file=f"panel_nomination/{docx_filename}",
-                pdf_file=f"panel_nomination/{pdf_filename}"
+                pdf_file=f"panel_nomination/{pdf_filename}",
             )
 
             # Remove DOCX file after conversion (optional)
@@ -465,8 +469,7 @@ class ManuscriptSubmissionView(APIView):
 
         # Save manuscript with user info
         manuscript = Manuscript.objects.create(
-            first_name=user.first_name,
-            last_name=user.last_name,
+            user=user,
             title=title,
             description=description,
             pdf=pdf
