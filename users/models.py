@@ -39,11 +39,11 @@ class Faculty(models.Model):
 
 class Manuscript(models.Model):
     manuscriptID = models.AutoField(primary_key=True)
-    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="manuscripts")
     title = models.CharField(max_length=200, help_text="Title of the manuscript")
     description = models.TextField(blank=True, help_text="Brief description or abstract of the manuscript")  
     pdf = models.FileField(upload_to='manuscripts/', help_text="Upload the PDF file here")
     created_at = models.DateTimeField(default=timezone.now, help_text="Timestamp of submission")
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="manuscripts")
 
     class Meta:
         verbose_name = "Manuscript"
