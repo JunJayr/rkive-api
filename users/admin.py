@@ -18,7 +18,7 @@ class ManuscriptAdmin(admin.ModelAdmin):
 @admin.register(ApplicationDefense)
 class ApplicationDefenseAdmin(admin.ModelAdmin):
     list_display = (
-        'applicationID', 'userID', 'department', 'lead_researcher', 'lead_contactno',
+        'applicationID', 'user', 'department', 'lead_researcher', 'lead_contactno',
         'co_researcher', 'co_researcher1', 'co_researcher2', 'co_researcher3', 'co_researcher4',
         'research_title', 'datetime_defense', 'place_defense',
         'panel_chair', 'adviser', 'panel1', 'panel2', 'panel3',
@@ -32,7 +32,7 @@ class ApplicationDefenseAdmin(admin.ModelAdmin):
 @admin.register(PanelDefense)
 class PanelDefenseAdmin(admin.ModelAdmin):
     list_display = (
-        'panelID', 'userID', 'research_title', 'lead_researcher',
+        'panelID', 'user', 'research_title', 'lead_researcher',
         'co_researcher', 'co_researcher1', 'co_researcher2', 'co_researcher3', 'co_researcher4',
         'adviser', 'panel_chair', 'panel1', 'panel2', 'panel3', 'pdf_file', 'created_at'
     )

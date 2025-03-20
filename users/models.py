@@ -43,7 +43,7 @@ class Manuscript(models.Model):
     description = models.TextField(blank=True, help_text="Brief description or abstract of the manuscript")  
     pdf = models.FileField(upload_to='manuscripts/', help_text="Upload the PDF file here")
     created_at = models.DateTimeField(default=timezone.now, help_text="Timestamp of submission")
-    userID = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="manuscripts")
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="manuscripts")
 
     class Meta:
         verbose_name = "Manuscript"
@@ -74,7 +74,7 @@ class ApplicationDefense(models.Model):
     documenter = models.CharField(max_length=255, null=True, blank=True)
     pdf_file = models.FileField(upload_to='defense_application/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    userID = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="application_defenses")
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="application_defenses")
 
     class Meta:
         verbose_name = "Application Defense"
@@ -100,7 +100,7 @@ class PanelDefense(models.Model):
     docx_file = models.FileField(upload_to='panel_nomination/')
     pdf_file = models.FileField(upload_to='panel_nomination/')
     created_at = models.DateTimeField(auto_now_add=True)
-    userID = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="panel_defenses")
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="panel_defenses")
 
     class Meta:
         verbose_name = "Panel Defense"
