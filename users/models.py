@@ -3,6 +3,8 @@ from django.conf import settings
 from django.utils import timezone
 from .managers import UserAccountManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class UserAccount(AbstractBaseUser, PermissionsMixin):
     userID = models.AutoField(primary_key=True)
@@ -83,7 +85,7 @@ class ApplicationDefense(models.Model):
     def __str__(self):
         return self.research_title
 
-class PanelDefense(models.Model):
+class PanelApplication(models.Model):
     panelID = models.AutoField(primary_key=True)
     research_title = models.TextField(blank=True, null=True)
     lead_researcher = models.CharField(max_length=255, blank=True, null=True)
@@ -117,16 +119,16 @@ class SubmissionReview(models.Model):
         ('rejected', 'Rejected')
     ]
     reviewID = models.AutoField(primary_key=True)
-    reviewer = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name="reviews")
-    application_defense = models.ForeignKey(ApplicationDefense, on_delete=models.CASCADE, null=True, blank=True, related_name="reviews")
-    panel_defense = models.ForeignKey(PanelDefense, on_delete=models.CASCADE, null=True, blank=True, related_name="reviews")
-    comments = models.TextField(blank=True, null=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    reviewed_at = models.DateTimeField(auto_now_add=True)
+    reviewer = models.ForeignKey(Faculty, on_delete=models.CASCADE, null=True, blank=True, related_name="reviews")
+    
+    # Generic Foreign Key (Allows linking to either ApplicationDefense or PanelApplication)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True,)
+    related_object = GenericForeignKey('content_type', 'object_id')
 
-    class Meta:
-        verbose_name = "Submission Review"
-        verbose_name_plural = "Submission Reviews"
+    comments = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', null=True, blank=True)
+    reviewed_at = models.DateTimeField(auto_now_add=True, null=True, blank=True,)
 
     def __str__(self):
         return f"Review by {self.reviewer.name} - {self.status}"

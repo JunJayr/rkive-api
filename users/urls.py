@@ -16,12 +16,12 @@ from .views import(
     ListDocumentFilesView,
     ListUsersView,
     SubmissionReviewViewSet,
-    
+    ContentTypeViewSet
 )
 
 router = DefaultRouter()
 router.register(r'submission-reviews', SubmissionReviewViewSet, basename='submission-review')
-
+router.register(r'content-types', ContentTypeViewSet, basename='content-type')
 
 urlpatterns = [
     re_path(
@@ -45,7 +45,7 @@ urlpatterns = [
     path('list-files/', ListDocumentFilesView.as_view()),
     path('list-users/', ListUsersView.as_view()),
     path('list-users/<int:user_id>/', ListUsersView.as_view()),
-
+    
     path('', include(router.urls)),
 ]
 

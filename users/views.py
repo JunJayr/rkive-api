@@ -10,10 +10,12 @@ from docx2pdf import convert
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, FileResponse, Http404
 from djoser.social.views import ProviderAuthView
 from rest_framework import viewsets
+from rest_framework.permissions import IsAdminUser
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -24,14 +26,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
-from .models import (
-    Manuscript,
-    ApplicationDefense,
-    PanelDefense,
-    Faculty,
-    SubmissionReview,
-)
-from .serializers import SubmissionReviewSerializer
+from .models import *
+from .serializers import SubmissionReviewSerializer, ContentTypeSerializer
 
 # Authentication Views
 class CustomProviderAuthView(ProviderAuthView):
@@ -340,7 +336,7 @@ class PanelDocxView(APIView):
         word.Quit()
 
     def _save_panel_record(self, user, context, docx_filename, pdf_filename):
-        return PanelDefense.objects.create(
+        return PanelApplication.objects.create(
             user=user,
             research_title=context.get('research_title'),
             lead_researcher=context.get('lead_researcher'),
@@ -615,3 +611,8 @@ class ListUsersView(APIView):
 class SubmissionReviewViewSet(viewsets.ModelViewSet):
     queryset = SubmissionReview.objects.all()
     serializer_class = SubmissionReviewSerializer
+
+class ContentTypeViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ContentType.objects.all()
+    serializer_class = ContentTypeSerializer
+    permission_classes = [IsAdminUser]  # Optional: Restrict to admin users
