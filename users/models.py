@@ -72,7 +72,7 @@ class ApplicationDefense(models.Model):
     panel2 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="application_panel2")
     panel3 = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True, related_name="application_panel3")
     documenter = models.CharField(max_length=255, null=True, blank=True)
-    pdf_file = models.FileField(upload_to='defense_application/', blank=True, null=True)
+    pdf_file = models.FileField(upload_to='defense_application/', blank=True, null=True)    
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name="application_defenses")
 
@@ -108,3 +108,25 @@ class PanelDefense(models.Model):
 
     def __str__(self):
         return self.research_title
+
+
+class SubmissionReview(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
+    ]
+    reviewID = models.AutoField(primary_key=True)
+    reviewer = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name="reviews")
+    application_defense = models.ForeignKey(ApplicationDefense, on_delete=models.CASCADE, null=True, blank=True, related_name="reviews")
+    panel_defense = models.ForeignKey(PanelDefense, on_delete=models.CASCADE, null=True, blank=True, related_name="reviews")
+    comments = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    reviewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Submission Review"
+        verbose_name_plural = "Submission Reviews"
+
+    def __str__(self):
+        return f"Review by {self.reviewer.name} - {self.status}"

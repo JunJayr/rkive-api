@@ -12,7 +12,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, FileResponse, Http404
-
+from djoser.social.views import ProviderAuthView
+from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -23,15 +24,14 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
-from djoser.social.views import ProviderAuthView
-
 from .models import (
     Manuscript,
     ApplicationDefense,
     PanelDefense,
     Faculty,
+    SubmissionReview,
 )
-
+from .serializers import SubmissionReviewSerializer
 
 # Authentication Views
 class CustomProviderAuthView(ProviderAuthView):
@@ -611,3 +611,7 @@ class ListUsersView(APIView):
             return JsonResponse({'message': 'User deleted successfully.'}, status=204)
         except User.DoesNotExist:
             return JsonResponse({'error': 'User not found.'}, status=404)
+
+class SubmissionReviewViewSet(viewsets.ModelViewSet):
+    queryset = SubmissionReview.objects.all()
+    serializer_class = SubmissionReviewSerializer

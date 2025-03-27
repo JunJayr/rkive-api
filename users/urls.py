@@ -1,4 +1,5 @@
-from django.urls import path, re_path
+from django.urls import path, re_path, include
+from rest_framework.routers import DefaultRouter
 from .views import(
     CustomProviderAuthView,
     CustomTokenObtainPairView,
@@ -14,8 +15,13 @@ from .views import(
     DocumentCountView,
     ListDocumentFilesView,
     ListUsersView,
+    SubmissionReviewViewSet,
     
 )
+
+router = DefaultRouter()
+router.register(r'submission-reviews', SubmissionReviewViewSet, basename='submission-review')
+
 
 urlpatterns = [
     re_path(
@@ -39,5 +45,7 @@ urlpatterns = [
     path('list-files/', ListDocumentFilesView.as_view()),
     path('list-users/', ListUsersView.as_view()),
     path('list-users/<int:user_id>/', ListUsersView.as_view()),
+
+    path('', include(router.urls)),
 ]
 
