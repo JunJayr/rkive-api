@@ -44,7 +44,7 @@ urlpatterns = [
     path('document-count/', DocumentCountView.as_view()),
     path('list-files/', ListDocumentFilesView.as_view()),
     path('list-users/', ListUsersView.as_view()),
-    path('list-users/<int:user_id>/', ListUsersView.as_view()),
+    path('list-users/<int:userID>/', ListUsersView.as_view()),
     
     path('', include(router.urls)),
 ]

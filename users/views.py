@@ -29,6 +29,8 @@ from rest_framework_simplejwt.views import (
 from .models import *
 from .serializers import SubmissionReviewSerializer, ContentTypeSerializer
 
+User = get_user_model()
+
 # Authentication Views
 class CustomProviderAuthView(ProviderAuthView):
     def post(self, request, *args, **kwargs):
@@ -527,15 +529,13 @@ class ListDocumentFilesView(APIView):
 
 class ListUsersView(APIView):
     def get(self, request, *args, **kwargs):
-        User = get_user_model()
         users = User.objects.all().values(
-            'id', 'first_name', 'last_name', 'email', 'is_active', 'is_staff',
+            'userID', 'first_name', 'last_name', 'email', 'is_active', 'is_staff',
             'is_superuser', 'is_dean', 'is_headdept', 'is_faculty', 'is_student',
         )
         return Response(list(users))
 
     def post(self, request, *args, **kwargs):
-        User = get_user_model()
         data = request.data
 
         if User.objects.filter(email=data.get('email')).exists():
@@ -543,31 +543,29 @@ class ListUsersView(APIView):
 
         password = data.get('password')
         repassword = data.get('repassword')
-        if not password or not repassword or password != repassword:
+        if not password or password != repassword:
             return JsonResponse({'error': 'Password validation failed.'}, status=400)
 
-        user = User.objects.create(
+        user = User(
             first_name=data.get('first_name', ''),
             last_name=data.get('last_name', ''),
             email=data.get('email'),
-            is_active=True,
         )
         user.set_password(password)
         user.save()
 
         return JsonResponse({
             'message': 'User created successfully',
-            'id': user.id,
+            'userID': user.userID,
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
         }, status=201)
 
     def put(self, request, *args, **kwargs):
-        user_id = kwargs.get('user_id')
+        userID = kwargs.get('userID')
         try:
-            User = get_user_model()
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(userID=userID)
         except User.DoesNotExist:
             return JsonResponse({'error': 'User not found.'}, status=404)
 
@@ -585,7 +583,7 @@ class ListUsersView(APIView):
 
         return JsonResponse({
             'message': 'User updated successfully',
-            'id': user.id,
+            'userID': user.userID,
             'first_name': user.first_name,
             'last_name': user.last_name,
             'email': user.email,
@@ -599,14 +597,14 @@ class ListUsersView(APIView):
         }, status=200)
 
     def delete(self, request, *args, **kwargs):
-        user_id = kwargs.get('user_id')
+        userID = kwargs.get('userID')
         try:
-            User = get_user_model()
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(userID=userID)
             user.delete()
-            return JsonResponse({'message': 'User deleted successfully.'}, status=204)
+            return JsonResponse({'message': 'User deleted successfully.'}, status=200)
         except User.DoesNotExist:
             return JsonResponse({'error': 'User not found.'}, status=404)
+
 
 class SubmissionReviewViewSet(viewsets.ModelViewSet):
     queryset = SubmissionReview.objects.all()
