@@ -215,6 +215,179 @@ class ApplicationDocxView(APIView):
         response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
         return response
 
+class ProposalApplicationDocxView(APIView):
+    def post(self, request, *args, **kwargs):
+        context = request.data
+        user = request.user
+        template_path = os.path.join(
+            settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application_proposal.docx'
+        )
+
+        if not os.path.exists(template_path):
+            return JsonResponse({'error': 'Template file not found.'}, status=404)
+
+        try:
+            pythoncom.CoInitialize()
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            docx_filename = f'Application-for-Oral-Defense_{timestamp}.docx'
+            pdf_filename = docx_filename.replace('.docx', '.pdf')
+            docx_file_path = os.path.join(settings.MEDIA_ROOT, 'defense_application', docx_filename)
+            pdf_file_path = os.path.join(settings.MEDIA_ROOT, 'defense_application', pdf_filename)
+
+            os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
+
+            docx_context = self._prepare_docx_context(context)
+            doc = DocxTemplate(template_path)
+            doc.render(docx_context)
+            doc.save(docx_file_path)
+
+            self._convert_to_pdf(docx_file_path, pdf_file_path)
+            doc_record = self._save_application_record(user, context, pdf_filename)
+            os.remove(docx_file_path)
+
+            return self._serve_pdf_response(pdf_file_path, pdf_filename)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        finally:
+            pythoncom.CoUninitialize()
+
+    def _prepare_docx_context(self, context):
+        docx_context = context.copy()
+        for key in ['panel_chair', 'adviser', 'panel1', 'panel2', 'panel3']:
+            docx_context[key] = self._get_faculty_name(context.get(key))
+        return docx_context
+
+    def _get_faculty_name(self, faculty_id):
+        faculty = Faculty.objects.filter(facultyID=faculty_id).first()
+        return faculty.name if faculty else 'Unknown'
+
+    def _get_faculty_object(self, faculty_id):
+        return Faculty.objects.filter(facultyID=faculty_id).first()
+
+    def _convert_to_pdf(self, docx_path, pdf_path):
+        word = Dispatch('Word.Application')
+        word.Visible = False
+        doc = word.Documents.Open(docx_path)
+        doc.SaveAs(pdf_path, FileFormat=17)
+        doc.Close()
+        word.Quit()
+
+    def _save_application_record(self, user, context, pdf_filename):
+        return ApplicationDefense.objects.create(
+            user=user,
+            department=context.get('department'),
+            lead_researcher=context.get('lead_researcher'),
+            lead_contactno=context.get('lead_contactno'),
+            co_researcher=context.get('co_researcher'),
+            co_researcher1=context.get('co_researcher1'),
+            co_researcher2=context.get('co_researcher2'),
+            co_researcher3=context.get('co_researcher3'),
+            co_researcher4=context.get('co_researcher4'),
+            research_title=context.get('research_title'),
+            datetime_defense=context.get('datetime_defense'),
+            place_defense=context.get('place_defense'),
+            panel_chair=self._get_faculty_object(context.get('panel_chair')),
+            adviser=self._get_faculty_object(context.get('adviser')),
+            panel1=self._get_faculty_object(context.get('panel1')),
+            panel2=self._get_faculty_object(context.get('panel2')),
+            panel3=self._get_faculty_object(context.get('panel3')),
+            documenter=context.get('documenter'),
+            pdf_file=f'defense_application/{pdf_filename}',
+        )
+
+    def _serve_pdf_response(self, pdf_path, pdf_filename):
+        pdf_file = open(pdf_path, 'rb')
+        response = FileResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+        return response
+
+class FinalApplicationDocxView(APIView):
+    def post(self, request, *args, **kwargs):
+        context = request.data
+        user = request.user
+        template_path = os.path.join(
+            settings.BASE_DIR, 'rkive', 'templates', 'word_templates', 'template_application_final.docx'
+        )
+
+        if not os.path.exists(template_path):
+            return JsonResponse({'error': 'Template file not found.'}, status=404)
+
+        try:
+            pythoncom.CoInitialize()
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            docx_filename = f'Application-for-Oral-Defense_{timestamp}.docx'
+            pdf_filename = docx_filename.replace('.docx', '.pdf')
+            docx_file_path = os.path.join(settings.MEDIA_ROOT, 'defense_application', docx_filename)
+            pdf_file_path = os.path.join(settings.MEDIA_ROOT, 'defense_application', pdf_filename)
+
+            os.makedirs(os.path.dirname(docx_file_path), exist_ok=True)
+
+            docx_context = self._prepare_docx_context(context)
+            doc = DocxTemplate(template_path)
+            doc.render(docx_context)
+            doc.save(docx_file_path)
+
+            self._convert_to_pdf(docx_file_path, pdf_file_path)
+            doc_record = self._save_application_record(user, context, pdf_filename)
+            os.remove(docx_file_path)
+
+            return self._serve_pdf_response(pdf_file_path, pdf_filename)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        finally:
+            pythoncom.CoUninitialize()
+
+    def _prepare_docx_context(self, context):
+        docx_context = context.copy()
+        for key in ['panel_chair', 'adviser', 'panel1', 'panel2', 'panel3']:
+            docx_context[key] = self._get_faculty_name(context.get(key))
+        return docx_context
+
+    def _get_faculty_name(self, faculty_id):
+        faculty = Faculty.objects.filter(facultyID=faculty_id).first()
+        return faculty.name if faculty else 'Unknown'
+
+    def _get_faculty_object(self, faculty_id):
+        return Faculty.objects.filter(facultyID=faculty_id).first()
+
+    def _convert_to_pdf(self, docx_path, pdf_path):
+        word = Dispatch('Word.Application')
+        word.Visible = False
+        doc = word.Documents.Open(docx_path)
+        doc.SaveAs(pdf_path, FileFormat=17)
+        doc.Close()
+        word.Quit()
+
+    def _save_application_record(self, user, context, pdf_filename):
+        return ApplicationDefense.objects.create(
+            user=user,
+            department=context.get('department'),
+            lead_researcher=context.get('lead_researcher'),
+            lead_contactno=context.get('lead_contactno'),
+            co_researcher=context.get('co_researcher'),
+            co_researcher1=context.get('co_researcher1'),
+            co_researcher2=context.get('co_researcher2'),
+            co_researcher3=context.get('co_researcher3'),
+            co_researcher4=context.get('co_researcher4'),
+            research_title=context.get('research_title'),
+            datetime_defense=context.get('datetime_defense'),
+            place_defense=context.get('place_defense'),
+            panel_chair=self._get_faculty_object(context.get('panel_chair')),
+            adviser=self._get_faculty_object(context.get('adviser')),
+            panel1=self._get_faculty_object(context.get('panel1')),
+            panel2=self._get_faculty_object(context.get('panel2')),
+            panel3=self._get_faculty_object(context.get('panel3')),
+            documenter=context.get('documenter'),
+            pdf_file=f'defense_application/{pdf_filename}',
+        )
+
+    def _serve_pdf_response(self, pdf_path, pdf_filename):
+        pdf_file = open(pdf_path, 'rb')
+        response = FileResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{pdf_filename}"'
+        return response
 
 class ApplicationAdminDocxView(APIView):
     def post(self, request, *args, **kwargs):

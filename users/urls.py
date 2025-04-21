@@ -9,6 +9,8 @@ from .views import(
     LogoutView,
     ApplicationDocxView,
     ApplicationAdminDocxView,
+    ProposalApplicationDocxView,
+    FinalApplicationDocxView,
     PanelDocxView,
     PanelAdminDocxView,
     ManuscriptSubmissionView,
@@ -36,6 +38,8 @@ urlpatterns = [
     path('logout/', LogoutView.as_view()),
     
     path('application-docx/', ApplicationDocxView.as_view()),
+    path('proposal-application-docx/', ProposalApplicationDocxView.as_view()),
+    path('final-application-docx/', FinalApplicationDocxView.as_view()),
     path('defense-application-admin/', ApplicationAdminDocxView.as_view()),
     path('panel-docx/', PanelDocxView.as_view()),
     path('defense-panel-admin/', PanelAdminDocxView.as_view()),
