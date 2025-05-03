@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
-from users.models import ApplicationDefense, PanelApplication, Faculty, SubmissionReview
+from users.models import ApplicationDefense, PanelApplication, Faculty, SubmissionReview, Faculty
 
 class ApplicationDefenseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,3 +21,8 @@ class ContentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContentType
         fields = ['id', 'app_label', 'model']
+
+class FacultySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Faculty
+        fields = '__all__'

@@ -27,7 +27,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 from .models import *
-from .serializers import SubmissionReviewSerializer, ContentTypeSerializer
+from .serializers import *
 
 User = get_user_model()
 
@@ -126,6 +126,11 @@ class LogoutView(APIView):
         response.delete_cookie('refresh')
         return response
 
+class FacultyListView(APIView):
+    def get(self, request):
+        faculty = Faculty.objects.all()
+        serializer = FacultySerializer(faculty, many=True)
+        return Response(serializer.data)
 
 # Document Generation Views
 class ApplicationDocxView(APIView):

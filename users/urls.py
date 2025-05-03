@@ -7,6 +7,7 @@ from .views import(
     CustomTokenRefreshView,
     CustomTokenVerifyView,
     LogoutView,
+    FacultyListView,
     ApplicationDocxView,
     ApplicationAdminDocxView,
     ProposalApplicationDocxView,
@@ -37,6 +38,7 @@ urlpatterns = [
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
     
+    path('faculty/', FacultyListView.as_view()),
     path('application-docx/', ApplicationDocxView.as_view()),
     path('proposal-application-docx/', ProposalApplicationDocxView.as_view()),
     path('final-application-docx/', FinalApplicationDocxView.as_view()),
